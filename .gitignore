@@ -1,0 +1,19 @@
+.gradle/
+build/
+out/
+*.log
+
+# Live2D Cubism Proprietary SDK & Binaries
+# The project does NOT distribute official proprietary Live2D SDK files.
+src/main/resources/cubism/
+cubism/
+*CubismSdk*
+CubismSdk*/
+*.dll
+*.so
+*.dylib
+*.obj
+*.lib
+*.exp
+__pycache__/
+*.pyc

@@ -1,0 +1,282 @@
+package io.github.psd2live.core
+
+import org.umamo.format.art.SourceArt
+import org.umamo.format.art.SourceLayer
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
+import java.nio.file.Path
+
+enum class SemanticTag(val canonicalName: String, val group: LayerGroup) {
+	BACK_HAIR("back hair", LayerGroup.HEAD),
+	FRONT_HAIR("front hair", LayerGroup.HEAD),
+	HEADWEAR("headwear", LayerGroup.HEAD),
+	FACE("face", LayerGroup.HEAD),
+	FACE_DETAIL("facedetail", LayerGroup.HEAD),
+	IRIDES("irides", LayerGroup.HEAD),
+	EYEBROW("eyebrow", LayerGroup.HEAD),
+	EYEWHITE("eyewhite", LayerGroup.HEAD),
+	EYELASH("eyelash", LayerGroup.HEAD),
+	EYE_CLOSE("eye_close", LayerGroup.HEAD),
+	EYEWEAR("eyewear", LayerGroup.HEAD),
+	EARS("ears", LayerGroup.HEAD),
+	EARWEAR("earwear", LayerGroup.HEAD),
+	NOSE("nose", LayerGroup.HEAD),
+	MOUTH("mouth", LayerGroup.HEAD),
+	MOUTH_OPEN("mouth_open", LayerGroup.HEAD),
+	MOUTH_CLOSE("mouth_close", LayerGroup.HEAD),
+	TOOTH_T("tooth-t", LayerGroup.HEAD),
+	TOOTH_B("tooth-b", LayerGroup.HEAD),
+	TONGUE("tongue", LayerGroup.HEAD),
+	NECK("neck", LayerGroup.BODY),
+	NECKWEAR("neckwear", LayerGroup.BODY),
+	TOPWEAR("topwear", LayerGroup.BODY),
+	HANDWEAR("handwear", LayerGroup.BODY),
+	BOTTOMWEAR("bottomwear", LayerGroup.BODY),
+	LEGWEAR("legwear", LayerGroup.BODY),
+	FOOTWEAR("footwear", LayerGroup.BODY),
+	TAIL("tail", LayerGroup.EXTRA),
+	WINGS("wings", LayerGroup.EXTRA),
+	OBJECTS("objects", LayerGroup.EXTRA),
+	UNKNOWN("unknown", LayerGroup.UNKNOWN),
+}
+
+enum class LayerGroup { HEAD, BODY, EXTRA, UNKNOWN }
+
+enum class Side { LEFT, RIGHT, NONE }
+
+enum class LayerType { PRESET, TOGGLE, SWITCH }
+
+data class LayerSemantic(
+	val tag: SemanticTag,
+	val side: Side = Side.NONE,
+	val variant: Int? = null,
+	val normalizedName: String,
+	val confidence: Float,
+	val type: LayerType = LayerType.PRESET,
+	val parameter: String = "",
+	val switchId: Int = 0,
+)
+
+data class ClassifiedLayer(
+	val source: SourceLayer,
+	val semantic: LayerSemantic,
+	val bounds: Bounds,
+	val centroidX: Float,
+	val centroidY: Float,
+	val opaquePixels: Int,
+)
+
+data class Bounds(val left: Float, val top: Float, val right: Float, val bottom: Float) {
+	val width: Float get() = right - left
+	val height: Float get() = bottom - top
+	val centerX: Float get() = (left + right) * 0.5f
+	val centerY: Float get() = (top + bottom) * 0.5f
+
+	fun union(other: Bounds): Bounds =
+		Bounds(
+			minOf(left, other.left),
+			minOf(top, other.top),
+			maxOf(right, other.right),
+			maxOf(bottom, other.bottom),
+		)
+
+	fun expanded(fraction: Float): Bounds {
+		val dx = width * fraction
+		val dy = height * fraction
+		return Bounds(left - dx, top - dy, right + dx, bottom + dy)
+	}
+}
+
+data class RigAnchors(
+	val character: Bounds,
+	val face: Bounds,
+	val body: Bounds,
+	val faceCenterX: Float,
+	val faceCenterY: Float,
+	val chinX: Float,
+	val chinY: Float,
+	val shoulderY: Float,
+	val hipY: Float,
+)
+
+data class MeshSettings(
+	val outerMargin: Float = 1.0f,
+	val innerMarginEnabled: Boolean = false,
+	val innerMargin: Float = 10.0f,
+	val maxEdgeDistance: Float = 6.0f,
+	val interiorDensity: Float = 40.0f,
+)
+
+data class PipelineConfig(
+	val atlasSize: Int = 4096,
+	val textureUpscale: TextureUpscaleConfig = TextureUpscaleConfig(),
+	val texturePadding: Int = 2,
+	val meshSpacing: Int = 40,
+	val meshOuterMargin: Float = 1.0f,
+	val meshInnerMargin: Float = 10.0f,
+	val meshMaxEdgeDistance: Float = 6.0f,
+	val meshInteriorDensity: Float = 40.0f,
+	val meshOverrides: Map<String, MeshSettings> = emptyMap(),
+	val alphaThreshold: Int = 8,
+	val headTurnStrength: Float = 1f,
+	val bodyStrength: Float = 1f,
+	/** Body/expression tuning ported from Auto_Vtb. 1.0 / 0 = the standard preset; see [PhysicsTuning]. */
+	val bustAmp: Float = 1f,
+	val bustY: Float = 0f,
+	val armY: Float = 0f,
+	val armPos: Float = 0f,
+	val frontHairAmp: Float = 1f,
+	val frontHairSoft: Float = 1f,
+	val backHairAmp: Float = 1f,
+	val backHairSoft: Float = 1f,
+	/** Arm swing amplitude (Live2D-style shoulder-pivot inertia). 1.0 = standard preset. */
+	val armSwingAmp: Float = 1f,
+	val meshOnly: Boolean = false,
+	val generateDeformers: Boolean = true,
+	val featureDisplacementEnabled: Boolean = true,
+	val mouthOutlineEnabled: Boolean = true,
+	val mouthShape: String = "smile",
+    val mouthCurve: io.github.psd2live.core.MouthCurve = io.github.psd2live.core.MouthCurve.preset("smile"),
+    val mouthColor: Int? = null,
+    val mouthThickness: Float = 1.5f,
+	val exportMotions: Boolean = true,
+	val motionIdle: Boolean = true,
+	val motionBlink: Boolean = true,
+	val motionNod: Boolean = true,
+	val motionShake: Boolean = true,
+	val generatePhysics: Boolean = true,
+	val physicsFrontHair: Boolean = true,
+	val physicsBackHair: Boolean = true,
+	val physicsEyeJelly: Boolean = true,
+	val exportCmo3: Boolean = true,
+	val exportMoc3: Boolean = true,
+	val exportJson: Boolean = true,
+	/** Manual UI corrections, keyed by the stable source/virtual-layer id. */
+	val layerOverrides: Map<String, LayerClassificationOverride> = emptyMap(),
+	/** Photoshop-style layer-eye overrides; omitted entries retain their PSD visibility. */
+	val layerVisibility: Map<String, Boolean> = emptyMap(),
+	/** Layers deleted by the user, excluded from atlas packing and rigging. */
+	val deletedLayerIds: Set<String> = emptySet(),
+	/** Manual parent deformer overrides (layerId or deformerId -> parentDeformerId or null for root). */
+	val parentOverrides: Map<String, String?> = emptyMap(),
+	/** Manual draw order overrides (layerId or drawableId -> drawOrder within 0..1000). */
+	val drawOrderOverrides: Map<String, Float> = emptyMap(),
+	/** Durable Agent/editor changes replayed over every generated base rig and retained on export. */
+	val rigEdits: RigEditOverlay = RigEditOverlay.Empty,
+)
+
+/** Scales/softens the generated physics pendulums; 1.0 = the standard preset. */
+data class PhysicsTuning(
+	val bustAmp: Float = 1f,
+	val frontHairAmp: Float = 1f,
+	val frontHairSoft: Float = 1f,
+	val backHairAmp: Float = 1f,
+	val backHairSoft: Float = 1f,
+	val armSwingAmp: Float = 1f,
+)
+
+/** One file from the MOC3 family consumed by the official Cubism runtime preview. */
+data class CubismRuntimeAsset(val path: String, val bytes: ByteArray)
+
+/**
+ * The exact runtime family prepared for export.  [encodePreviewBundle] only adds a small transport
+ * envelope; every embedded byte is the same byte later written to the output directory.
+ */
+data class CubismRuntimeBundle(
+	val manifestPath: String,
+	val assets: List<CubismRuntimeAsset>,
+) {
+	init {
+		require(manifestPath.isNotBlank()) { "Cubism preview manifest path is blank" }
+		require(assets.any { it.path == manifestPath }) { "Cubism preview manifest is missing: $manifestPath" }
+	}
+
+	fun encodePreviewBundle(): ByteArray = ByteArrayOutputStream().use { output ->
+		output.write("QDPREVIEW".encodeToByteArray())
+		output.writeLittleEndian(1, Int.SIZE_BYTES)
+		val manifest = manifestPath.encodeToByteArray()
+		output.writeLittleEndian(manifest.size.toLong(), Int.SIZE_BYTES)
+		output.writeLittleEndian(assets.size.toLong(), Int.SIZE_BYTES)
+		output.write(manifest)
+		for (asset in assets) {
+			val path = asset.path.encodeToByteArray()
+			output.writeLittleEndian(path.size.toLong(), Int.SIZE_BYTES)
+			output.writeLittleEndian(asset.bytes.size.toLong(), Long.SIZE_BYTES)
+			output.write(path)
+			output.write(asset.bytes)
+		}
+		output.toByteArray()
+	}
+
+	private fun ByteArrayOutputStream.writeLittleEndian(value: Long, byteCount: Int) {
+		for (index in 0 until byteCount) write((value ushr (index * 8)).toInt() and 0xff)
+	}
+}
+
+data class LayerClassificationOverride(
+	val type: LayerType = LayerType.PRESET,
+	val tag: SemanticTag = SemanticTag.UNKNOWN,
+	val side: Side = Side.NONE,
+	val parameter: String = "",
+	val switchId: Int = 0,
+) {
+	constructor(tag: SemanticTag, side: Side) : this(
+		type = LayerType.PRESET,
+		tag = tag,
+		side = side,
+		parameter = "",
+		switchId = 0,
+	)
+}
+
+data class AtlasPlacement(
+	val page: Int,
+	val x: Int,
+	val y: Int,
+	val width: Int,
+	val height: Int,
+	/** Texture pixels per original canvas pixel. */
+	val scale: Int = 1,
+)
+
+data class AtlasPage(val image: BufferedImage, val png: ByteArray)
+
+data class PackedAtlas(
+	val pages: List<AtlasPage>,
+	val placementByLayerId: Map<String, AtlasPlacement>,
+)
+
+data class PipelineAnalysis(
+	val source: SourceArt,
+	val layers: List<ClassifiedLayer>,
+	val anchors: RigAnchors,
+	val warnings: List<String>,
+	val preview: BufferedImage,
+    val calibration: PipelineAnalysis? = null,
+)
+
+/** The exact atlas and rig shown by the workbench before export. */
+data class RigPreviewModel(
+	val analysis: PipelineAnalysis,
+	val atlas: PackedAtlas,
+	val rig: BuiltRig,
+	val config: PipelineConfig,
+	val runtimeBundle: CubismRuntimeBundle,
+) {
+	/** True only when this exact preview bundle contains an active Cubism physics sidecar. */
+	val hasRuntimePhysics: Boolean
+		get() = runtimeBundle.assets.any { it.path.endsWith(".physics3.json", ignoreCase = true) }
+}
+
+data class ExportedFile(val path: Path, val bytes: Long)
+
+data class PipelineResult(
+	val analysis: PipelineAnalysis,
+	val exportedFiles: List<ExportedFile>,
+	val warnings: List<String>,
+	val previewModel: RigPreviewModel,
+)
+
+fun interface ProgressListener {
+	fun update(stage: String, fraction: Double)
+}

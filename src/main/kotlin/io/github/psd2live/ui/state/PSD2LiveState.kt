@@ -1,0 +1,374 @@
+package io.github.psd2live.ui.state
+
+import io.github.psd2live.core.MeshSettings
+import io.github.psd2live.core.SemanticTag
+
+import androidx.compose.runtime.Immutable
+import io.github.psd2live.core.LayerClassificationOverride
+import io.github.psd2live.core.PipelineAnalysis
+import io.github.psd2live.core.PipelineConfig
+import io.github.psd2live.core.RigPreviewModel
+import io.github.psd2live.core.RigEditOverlay
+import io.github.psd2live.i18n.AppLanguage
+import io.github.psd2live.i18n.I18n
+import org.umamo.runtime.model.ParameterId
+
+import io.github.psd2live.agent.AgentHistorySnapshot
+
+enum class WorkspaceTab {
+	HIERARCHY,
+	TOPOLOGY,
+	PREVIEW,
+	HISTORY,
+	LOG,
+}
+
+enum class LogSource {
+	SYSTEM,
+	MCP_SERVER,
+	AGENT,
+}
+
+enum class LogLevel {
+	INFO,
+	SUCCESS,
+	WARNING,
+	ERROR,
+}
+
+@Immutable
+data class AppLogEntry(
+	val id: String = java.util.UUID.randomUUID().toString(),
+	val timestamp: java.time.Instant = java.time.Instant.now(),
+	val source: LogSource = LogSource.SYSTEM,
+	val level: LogLevel = LogLevel.INFO,
+	val tag: String = "",
+	val message: String,
+	val detail: String? = null,
+	val imageBytes: ByteArray? = null,
+	val imageLabel: String? = null,
+) {
+	override fun equals(other: Any?): Boolean {
+		if (this === other) return true
+		if (other !is AppLogEntry) return false
+		return id == other.id
+	}
+
+	override fun hashCode(): Int = id.hashCode()
+}
+
+enum class InspectorTab {
+	LAYERS,
+	PARAMETERS,
+	DYNAMICS,
+}
+
+enum class PreviewBackground {
+	CHECKER,
+	GREEN,
+	DARK,
+}
+
+data class HistoryAnnotation(val title: String = "", val note: String = "", val hidden: Boolean = false)
+
+@Immutable
+data class PSD2LiveState(
+	val projectId: String? = null,
+    val projectFile: String? = null,
+    val projectDirty: Boolean = false,
+    val projectSaving: Boolean = false,
+    val projectSaveError: String? = null,
+    val showProjectLocationDialog: Boolean = false,
+    val showExportPsdDialog: Boolean = false,
+    val isExportingPsd: Boolean = false,
+    val projectOpenGeneration: Long = 0,
+    val projectEditVersion: Long = 0,
+    val projectAuxiliaryVersion: Long = 0,
+    val projectSourceName: String? = null,
+    val historyZoom: Float = 1f,
+    val historyPanX: Float = 0f,
+    val historyPanY: Float = 0f,
+    val historySearch: String = "",
+    val historyShowHidden: Boolean = false,
+    val hierarchyWidth: Float = 260f,
+    val hierarchyCollapsed: Boolean = false,
+    val hierarchySearch: String = "",
+    val modelSettingsExpanded: Boolean = true,
+    val workspaceSplitRatio: Float = 0.60f,
+    val canvasZoom: Float = 1f,
+    val canvasPanX: Float = 0f,
+    val canvasPanY: Float = 0f,
+    val historyAnnotations: Map<String, HistoryAnnotation> = emptyMap(),
+    val inputPath: String = "",
+	/** Input identity that produced [analysis]; remains stable while the user edits the next path field. */
+	val loadedInputPath: String? = null,
+	val loadedInputFileSignature: String? = null,
+	val outputPath: String = "",
+	val atlasSize: Int = 4096,
+	val textureUpscale: io.github.psd2live.core.TextureUpscaleConfig = io.github.psd2live.core.TextureUpscaleConfig(),
+	val meshSpacing: Int = 40,
+	val meshOuterMargin: Float = 1.0f,
+	val meshInnerMargin: Float = 10.0f,
+	val meshMaxEdgeDistance: Float = 6.0f,
+	val meshInteriorDensity: Float = 40.0f,
+	val meshOverrides: Map<String, MeshSettings> = emptyMap(),
+	val texturePadding: Int = 2,
+	val alphaThreshold: Int = 8,
+	val headStrength: Float = 1.0f,
+	val bodyStrength: Float = 1.0f,
+	val bustAmp: Float = 1.0f,
+	val bustY: Float = 0f,
+	val armY: Float = 0f,
+	val armPos: Float = 0f,
+	val frontHairAmp: Float = 1.0f,
+	val frontHairSoft: Float = 1.0f,
+	val backHairAmp: Float = 1.0f,
+	val backHairSoft: Float = 1.0f,
+	val armSwingAmp: Float = 1.0f,
+	val meshOnly: Boolean = false,
+	val generateDeformers: Boolean = true,
+	val featureDisplacementEnabled: Boolean = true,
+	val mouthOutlineEnabled: Boolean = true,
+	val mouthShape: String = "smile",
+    val mouthCurve: io.github.psd2live.core.MouthCurve = io.github.psd2live.core.MouthCurve.preset("smile"),
+    val mouthColor: Int? = null,
+    val mouthThickness: Float = 1.5f,
+	val exportMotions: Boolean = true,
+	val motionIdle: Boolean = true,
+	val motionBlink: Boolean = true,
+	val motionNod: Boolean = true,
+	val motionShake: Boolean = true,
+	val generatePhysics: Boolean = true,
+	val physicsFrontHair: Boolean = true,
+	val physicsBackHair: Boolean = true,
+	val physicsEyeJelly: Boolean = true,
+	val exportCmo3: Boolean = true,
+	val exportMoc3: Boolean = true,
+	val exportJson: Boolean = true,
+	val exportOptionsExpanded: Boolean = true,
+	val motionSubExpanded: Boolean = false,
+	val physicsSubExpanded: Boolean = false,
+	val dynamicsSubExpanded: Boolean = false,
+	val projectOutputsExpanded: Boolean = false,
+	val textureSubExpanded: Boolean = false,
+	val meshSubExpanded: Boolean = false,
+	val strengthSubExpanded: Boolean = false,
+	val advancedExpanded: Boolean = false,
+	val isAnalyzing: Boolean = false,
+	val isGenerating: Boolean = false,
+	val isUpscaling: Boolean = false,
+	val progress: Float = 0f,
+	val isIndeterminateProgress: Boolean = false,
+	val statusText: String = "",
+	val logLines: List<String> = emptyList(),
+	val logEntries: List<AppLogEntry> = emptyList(),
+	val logPanelExpanded: Boolean = true,
+	val logPanelHeight: Float = 190f,
+	val historySnapshot: AgentHistorySnapshot? = null,
+	val selectedHistoryNodeId: String? = null,
+	val lightboxImage: ByteArray? = null,
+	val lightboxTitle: String? = null,
+	val analysis: PipelineAnalysis? = null,
+	val previewModel: RigPreviewModel? = null,
+	val selectedLayerId: String? = null,
+	val selectedDeformerId: String? = null,
+	val showWarp: Boolean = false,
+	val showMesh: Boolean = false,
+	val showTexture: Boolean = true,
+	val warpShowNames: Boolean = true,
+	val warpShowIndices: Boolean = false,
+	val filterSelectedOnly: Boolean = false,
+	val dimUnselected: Boolean = true,
+	val contextualWarp: Boolean = true,
+	val showSelectionBounds: Boolean = true,
+	val clickToSelectLayer: Boolean = AppSettings.clickToSelectLayer,
+	val hoveredLayerId: String? = null,
+	val hoveredDeformerId: String? = null,
+	val layerVisibility: Map<String, Boolean> = emptyMap(),
+	val deformerVisibility: Map<String, Boolean> = emptyMap(),
+	val layerOverrides: Map<String, LayerClassificationOverride> = emptyMap(),
+	val isolationSnapshot: Map<String, Boolean>? = null,
+	val isolatedLayerId: String? = null,
+	val lockedParameters: Set<ParameterId> = emptySet(),
+	val parameterValues: Map<ParameterId, Float> = emptyMap(),
+	val parameterSearchQuery: String = "",
+	val animationEnabled: Boolean = true,
+	val mouseTrackingEnabled: Boolean = true,
+	val faceTrackingEnabled: Boolean = false,
+	val faceBodyFollow: Float = 0.25f,
+	val sdkStatus: String? = null,
+	val activeWorkspaceTab: WorkspaceTab = WorkspaceTab.PREVIEW,
+	val activeInspectorTab: InspectorTab = InspectorTab.LAYERS,
+	val activeExpressionPreset: String? = null,
+	val previewBackground: PreviewBackground = PreviewBackground.CHECKER,
+	val currentLanguage: AppLanguage = I18n.currentLanguage,
+	val uiScale: Float = AppSettings.uiScale,
+	val fontScale: Float = AppSettings.fontScale,
+	val showSettingsDialog: Boolean = false,
+	val deletedLayerIds: Set<String> = emptySet(),
+	val parentOverrides: Map<String, String?> = emptyMap(),
+	val drawOrderOverrides: Map<String, Float> = emptyMap(),
+	/** Durable parameter/keyform edits replayed after each generated-rig rebuild. */
+	val rigEdits: RigEditOverlay = RigEditOverlay.Empty,
+	val errorMessage: String? = null,
+	val successExportMessage: String? = null,
+) {
+	fun buildConfig(): PipelineConfig {
+		val hasAnyMotion = motionIdle || motionBlink || motionNod || motionShake
+		val hasAnyPhysics = physicsFrontHair || physicsBackHair || physicsEyeJelly || rigEdits.physicsEdits.isNotEmpty()
+		return PipelineConfig(
+			atlasSize = atlasSize,
+			textureUpscale = textureUpscale,
+			texturePadding = texturePadding,
+			meshSpacing = meshSpacing,
+			meshOuterMargin = meshOuterMargin,
+			meshInnerMargin = meshInnerMargin,
+			meshMaxEdgeDistance = meshMaxEdgeDistance,
+			meshInteriorDensity = meshInteriorDensity,
+			meshOverrides = meshOverrides,
+			alphaThreshold = alphaThreshold,
+			headTurnStrength = headStrength,
+			bodyStrength = bodyStrength,
+			bustAmp = bustAmp,
+			bustY = bustY,
+			armY = armY,
+			armPos = armPos,
+			frontHairAmp = frontHairAmp,
+			frontHairSoft = frontHairSoft,
+			backHairAmp = backHairAmp,
+			backHairSoft = backHairSoft,
+			armSwingAmp = armSwingAmp,
+			meshOnly = meshOnly,
+			generateDeformers = !meshOnly,
+			featureDisplacementEnabled = featureDisplacementEnabled,
+			mouthOutlineEnabled = mouthOutlineEnabled,
+			mouthShape = mouthShape,
+            mouthCurve = mouthCurve,
+            mouthColor = mouthColor,
+            mouthThickness = mouthThickness,
+			exportMotions = !meshOnly && hasAnyMotion,
+			motionIdle = motionIdle,
+			motionBlink = motionBlink,
+			motionNod = motionNod,
+			motionShake = motionShake,
+			generatePhysics = generatePhysics && !meshOnly && hasAnyPhysics,
+			physicsFrontHair = physicsFrontHair,
+			physicsBackHair = physicsBackHair,
+			physicsEyeJelly = physicsEyeJelly,
+			exportCmo3 = exportCmo3,
+			exportMoc3 = exportMoc3,
+			exportJson = exportJson,
+			layerOverrides = layerOverrides,
+			layerVisibility = layerVisibility,
+			deletedLayerIds = deletedLayerIds,
+			parentOverrides = parentOverrides,
+			drawOrderOverrides = drawOrderOverrides,
+			rigEdits = rigEdits,
+		)
+	}
+
+	fun getEffectiveDrawOrder(drawableId: String, layerId: String?, defaultOrder: Float): Float {
+		if (layerId != null) {
+			drawOrderOverrides[layerId]?.let { return it }
+		}
+		return drawOrderOverrides[drawableId] ?: defaultOrder
+	}
+
+	fun getDefaultMeshSettings(layerId: String?): MeshSettings {
+		val layer = if (layerId != null) {
+			analysis?.layers?.firstOrNull { it.source.id.raw == layerId }
+		} else null
+		val semanticDensity = when (layer?.semantic?.tag) {
+			SemanticTag.FACE, SemanticTag.FRONT_HAIR, SemanticTag.BACK_HAIR, SemanticTag.TOPWEAR -> 0.65f
+			SemanticTag.IRIDES, SemanticTag.EYELASH, SemanticTag.EYEWHITE, SemanticTag.EYEBROW,
+			SemanticTag.MOUTH, SemanticTag.MOUTH_OPEN, SemanticTag.MOUTH_CLOSE,
+			SemanticTag.TOOTH_T, SemanticTag.TOOTH_B, SemanticTag.TONGUE -> 0.45f
+			else -> 1f
+		}
+		val isFace = layer?.semantic?.tag == SemanticTag.FACE
+		return MeshSettings(
+			outerMargin = meshOuterMargin,
+			innerMarginEnabled = isFace,
+			innerMargin = meshInnerMargin,
+			maxEdgeDistance = kotlin.math.max(12f, meshMaxEdgeDistance * semanticDensity),
+			interiorDensity = kotlin.math.max(12f, meshInteriorDensity * semanticDensity),
+		)
+	}
+
+	fun getEffectiveMeshSettings(layerId: String?): MeshSettings {
+		val defaultSettings = getDefaultMeshSettings(layerId)
+		if (layerId != null) {
+			meshOverrides[layerId]?.let { return it }
+		}
+		return defaultSettings
+	}
+
+	fun getLayerDrawOrder(layerId: String): Float? {
+		drawOrderOverrides[layerId]?.let { return it }
+		val model = previewModel ?: return null
+		val drawableId = model.rig.layerIdByDrawableId.entries.firstOrNull { it.value == layerId }?.key
+		val drawable = model.rig.puppet.drawables.firstOrNull { it.id.raw == drawableId }
+		return drawable?.drawOrder
+	}
+
+	fun isLayerVisible(layerId: String, defaultVisible: Boolean = true): Boolean {
+		layerVisibility[layerId]?.let { return it }
+		val parentId = when {
+			layerId.endsWith(":l") || layerId.endsWith(":r") -> layerId.dropLast(2)
+			else -> null
+		}
+		return parentId?.let(layerVisibility::get) ?: defaultVisible
+	}
+
+	fun isDeformerVisible(deformerId: String, defaultVisible: Boolean = true): Boolean {
+		return deformerVisibility[deformerId] ?: defaultVisible
+	}
+
+	val effectiveVisibleLayerIds: Set<String>
+		get() {
+			val model = previewModel ?: return emptySet()
+			val hiddenDeformers = deformerVisibility.filterValues { !it }.keys
+			val layerHiddenByDeformer: (String) -> Boolean = if (hiddenDeformers.isEmpty()) {
+				{ false }
+			} else {
+				val drawableIdByLayerId = model.rig.layerIdByDrawableId.entries.associate { it.value to it.key }
+				val drawableById = model.rig.puppet.drawables.associateBy { it.id.raw }
+				val deformerById = model.rig.puppet.deformers.associateBy { it.id.raw }
+				fun isHidden(layerId: String): Boolean {
+					val drawId = drawableIdByLayerId[layerId]
+					var parent: String? = drawId?.let { parentOverrides[it] ?: drawableById[it]?.parentDeformerId?.raw }
+					val visited = mutableSetOf<String>()
+					while (parent != null && visited.add(parent)) {
+						if (parent in hiddenDeformers) {
+							return true
+						}
+						parent = parentOverrides[parent] ?: deformerById[parent]?.parent?.raw
+					}
+					return false
+				}
+				::isHidden
+			}
+
+			return model.analysis.layers
+				.asSequence()
+				.filter { isLayerVisible(it.source.id.raw, it.source.visible) && !layerHiddenByDeformer(it.source.id.raw) }
+				.mapTo(linkedSetOf()) { it.source.id.raw }
+		}
+
+	val isBusy: Boolean
+		get() = isAnalyzing || isGenerating || isUpscaling
+
+	fun minRequiredAtlasSize(scale: Int = textureUpscale.scale): Int {
+		val effectiveLayers = previewModel?.analysis?.layers ?: analysis?.layers ?: return 1024
+		val valid = effectiveLayers.filter { it.source.raster.width > 0 && it.source.raster.height > 0 && it.opaquePixels > 0 }
+		if (valid.isEmpty()) return 1024
+		val largest = valid.maxOfOrNull {
+			maxOf(it.source.raster.width * scale, it.source.raster.height * scale) + texturePadding * 2
+		} ?: 1024
+		var size = 256
+		while (size < largest && size < 16384) {
+			size = size shl 1
+		}
+		return size.coerceIn(256, 16384)
+	}
+}
