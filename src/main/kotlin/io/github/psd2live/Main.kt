@@ -13,6 +13,7 @@ import io.github.psd2live.core.ProgressListener
 import io.github.psd2live.i18n.AppLanguage
 import io.github.psd2live.i18n.I18n
 import io.github.psd2live.i18n.tr
+import io.github.psd2live.ui.AppIcon
 import io.github.psd2live.ui.state.PSD2LiveViewModel
 import io.github.psd2live.ui.views.PSD2LiveApp
 import java.nio.file.Path
@@ -55,6 +56,7 @@ fun main(arguments: Array<String>) {
 				Window(
 					onCloseRequest = closeApp,
 					title = tr("app.title"),
+					icon = AppIcon.painter,
 					state = windowState,
 					undecorated = true,
 				) {

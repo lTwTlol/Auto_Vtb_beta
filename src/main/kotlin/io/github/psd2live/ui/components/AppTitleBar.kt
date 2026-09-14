@@ -2,6 +2,7 @@ package io.github.psd2live.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -58,6 +59,7 @@ import androidx.compose.ui.window.WindowState
 import io.github.psd2live.i18n.AppLanguage
 import io.github.psd2live.i18n.I18n
 import io.github.psd2live.i18n.tr
+import io.github.psd2live.ui.AppIcon
 import io.github.psd2live.ui.theme.LocalToolColors
 import io.github.psd2live.ui.theme.LocalToolTypography
 import java.awt.Cursor
@@ -144,6 +146,13 @@ fun AppTitleBar(
 			modifier = Modifier.fillMaxHeight(),
 			verticalAlignment = Alignment.CenterVertically,
 		) {
+			AppIcon.imageBitmap?.let { icon ->
+				Image(
+					bitmap = icon,
+					contentDescription = tr("app.title"),
+					modifier = Modifier.padding(start = 8.dp).size(18.dp),
+				)
+			}
 			Spacer(modifier = Modifier.width(6.dp))
 
 			// 1. File Menu

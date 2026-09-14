@@ -101,28 +101,60 @@ object PhysicsGenerator {
 			)
 		}
 		if (hasBust) {
+			// 九轴 chest: two independent pendulums feed a 3x3 (nine-keyform) warp deformer.
+			//   PhysicsChestX -> ParamBustX (horizontal sway: yaw / roll / body roll)
+			//   PhysicsChestY -> ParamBust  (vertical jelly: pitch / body pitch / breath)
+			// Each is a three-link underdamped chain so the breast overshoots and settles like
+			// gelatin instead of tracking the pose.  Only parameters VTube Studio's face capture
+			// actually drives are weighted strongly; ParamBreath stays a weak secondary.
 			add(
 				PhysicsRule(
-					id = "PhysicsChest",
-					name = tr("model.physics.bust"),
-					outputParameter = "ParamBust",
+					id = "PhysicsChestX",
+					name = tr("model.physics.bustX"),
+					outputParameter = "ParamBustX",
 					outputScale = 1f * tuning.bustAmp,
-					outputVertexIndex = 1,
+					outputVertexIndex = 2,
 					inputs = listOf(
-						InputRule("ParamBreath", 30f, InputType.X),
-						InputRule("ParamAngleY", 0.6f, InputType.ANGLE, reflect = true),
-						InputRule("ParamBodyAngleZ", 0.4f, InputType.ANGLE),
+						InputRule("ParamAngleY", 35f, InputType.ANGLE, reflect = true),
+						InputRule("ParamAngleZ", 15f, InputType.ANGLE),
+						InputRule("ParamBodyAngleZ", 30f, InputType.ANGLE),
 					),
 					vertices = listOf(
 						VertexRule(0f, 1f, 1f, 1f, 0f),
-						VertexRule(1f, 0.6f, 0.4f, 2.5f, 1f),
+						VertexRule(0.55f, 0.85f, 0.5f, 3f, 0.7f),
+						VertexRule(1f, 0.65f, 0.35f, 3.6f, 1f),
 					),
 					positionMinimum = -1f,
 					positionDefault = 0f,
 					positionMaximum = 1f,
-					angleMinimum = -30f * tuning.bustAmp,
+					angleMinimum = -18f * tuning.bustAmp,
 					angleDefault = 0f,
-					angleMaximum = 30f * tuning.bustAmp,
+					angleMaximum = 18f * tuning.bustAmp,
+				),
+			)
+			add(
+				PhysicsRule(
+					id = "PhysicsChestY",
+					name = tr("model.physics.bustY"),
+					outputParameter = "ParamBust",
+					outputScale = 1f * tuning.bustAmp,
+					outputVertexIndex = 2,
+					inputs = listOf(
+						InputRule("ParamAngleX", 30f, InputType.X),
+						InputRule("ParamBodyAngleX", 20f, InputType.X),
+						InputRule("ParamBreath", 8f, InputType.X),
+					),
+					vertices = listOf(
+						VertexRule(0f, 1f, 1f, 1f, 0f),
+						VertexRule(0.55f, 0.85f, 0.5f, 3f, 0.7f),
+						VertexRule(1f, 0.65f, 0.35f, 3.6f, 1f),
+					),
+					positionMinimum = -1f,
+					positionDefault = 0f,
+					positionMaximum = 1f,
+					angleMinimum = -18f * tuning.bustAmp,
+					angleDefault = 0f,
+					angleMaximum = 18f * tuning.bustAmp,
 				),
 			)
 		}

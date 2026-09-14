@@ -57,6 +57,7 @@ object StandardParameters {
 	val MOUTH_OPEN = ParameterId("ParamMouthOpenY")
 	val BREATH = ParameterId("ParamBreath")
 	val BUST = ParameterId("ParamBust")
+	val BUST_X = ParameterId("ParamBustX")
 	val HAIR_FRONT = ParameterId("ParamHairFront")
 	val HAIR_BACK = ParameterId("ParamHairBack")
 	val ARM_SWING_L = ParameterId("ParamArmSwingL")
@@ -81,6 +82,7 @@ object StandardParameters {
 			Parameter(MOUTH_OPEN, tr("model.parameter.mouthOpen"), 0f, 1f, 0f),
 			Parameter(BREATH, tr("model.parameter.breath"), 0f, 1f, 0f),
 			Parameter(BUST, tr("model.parameter.bust"), -1f, 1f, 0f),
+			Parameter(BUST_X, tr("model.parameter.bustX"), -1f, 1f, 0f),
 			Parameter(HAIR_FRONT, tr("model.parameter.hairFront"), -1f, 1f, 0f),
 			Parameter(HAIR_BACK, tr("model.parameter.hairBack"), -1f, 1f, 0f),
 			Parameter(ARM_SWING_L, tr("model.parameter.armSwingL"), -30f, 30f, 0f),
@@ -638,12 +640,22 @@ object RigBuilder {
 		chestV: Float,
 		chestRu: Float,
 		chestRv: Float,
-		bust: Float,
+		bustX: Float,
+		bustY: Float,
 	): Pair<Float, Float> {
 		val gx = (u - chestU) / chestRu
 		val gy = (v - chestV) / chestRv
-		val dy = bust * 0.06f * kotlin.math.exp(-gx * gx - gy * gy)
-		return u to (v + dy)
+		// 九轴 jelly: two axes (bustX = horizontal sway, bustY = vertical bounce) form a 3x3
+		// keyform lattice.  The vertical axis stretches and squeezes volume-preservingly, the
+		// horizontal axis sways with the bottom lagging the top, and a gaussian fades the
+		// effect out toward the shoulders and waist.
+		val g = kotlin.math.exp(-gx * gx - gy * gy)
+		val sway = 0.4f + 0.6f * gy
+		val ampX = 0.05f
+		val ampY = 0.09f
+		val dx = (bustX * ampX * sway - bustY * ampY * 0.5f * gx) * g
+		val dy = bustY * ampY * sway * g
+		return (u + dx) to (v + dy)
 	}
 
 	internal fun headContainerPoint(
@@ -751,11 +763,14 @@ object RigBuilder {
 			val chestRu = 0.6f * faceAnchor.width / character.width.coerceAtLeast(1e-4f)
 			val chestRv = 0.45f * faceAnchor.height / character.height.coerceAtLeast(1e-4f)
 			val bustGrid = warpGrid(
-				listOf(axis(StandardParameters.BUST, -1f, 0f, 1f)),
+				listOf(
+					axis(StandardParameters.BUST_X, -1f, 0f, 1f),
+					axis(StandardParameters.BUST, -1f, 0f, 1f),
+				),
 				columns = 4,
 				rows = 6,
 			) { u, v, values ->
-				bustWarpPoint(u, v, chestU, chestV, chestRu, chestRv, values[0])
+				bustWarpPoint(u, v, chestU, chestV, chestRu, chestRv, values[0], values[1])
 			}
 			Deformer.Warp(bustWarpId, tr("model.deformer.bust"), breathWarpId, bodyPartId, 6, 4, true, bustGrid)
 		} else null
@@ -1808,7 +1823,7 @@ object RigBuilder {
 			group("ParamGroupEyes", tr("model.group.eyes"), listOf(StandardParameters.EYE_L_OPEN, StandardParameters.EYE_R_OPEN, StandardParameters.EYE_BALL_X, StandardParameters.EYE_BALL_Y, StandardParameters.EYE_BALL_FORM)),
 			group("ParamGroupBrows", tr("model.group.brows"), listOf(StandardParameters.BROW_L_Y, StandardParameters.BROW_R_Y)),
 			group("ParamGroupMouth", tr("model.group.mouth"), listOf(StandardParameters.MOUTH_FORM, StandardParameters.MOUTH_OPEN)),
-			group("ParamGroupBody", tr("model.group.body"), listOf(StandardParameters.BODY_X, StandardParameters.BODY_Y, StandardParameters.BODY_Z, StandardParameters.BREATH, StandardParameters.BUST)),
+			group("ParamGroupBody", tr("model.group.body"), listOf(StandardParameters.BODY_X, StandardParameters.BODY_Y, StandardParameters.BODY_Z, StandardParameters.BREATH, StandardParameters.BUST, StandardParameters.BUST_X)),
 			group("ParamGroupPhysics", tr("model.group.physics"), listOf(StandardParameters.HAIR_FRONT, StandardParameters.HAIR_BACK)),
 		)
 		return if (customParameters.isNotEmpty()) {
