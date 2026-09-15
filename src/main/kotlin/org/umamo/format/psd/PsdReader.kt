@@ -98,6 +98,11 @@ object PsdReader : ArtReader {
 				}
 
 				else -> {
+					// Decode, then denoise + trim to content bbox (mirrors rigger.js cleanPsdLayers). A raw
+					// PSD rectangle carries low-alpha residue across the whole canvas; without this the
+					// classifier/splitter reads that residue as content and displaces the layer.
+					val decoded = PsdRaster.decodeLayer(bytes, header, parse.colorModeData, record)
+					val (raster, bounds) = PsdLayerCleanup.clean(decoded, record.bounds)
 					layersTopToBottom +=
 						PsdSourceLayer(
 							// Stable identity: Photoshop's lyid (stable across rename/reorder) when present, else name+order. See docs/format/PSD.md.
@@ -106,11 +111,11 @@ object PsdReader : ArtReader {
 							visible = record.visible,
 							groupPath = folderStack.joinToString("/"),
 							order = emittedOrder++, // top-most emitted layer = 0
-							bounds = record.bounds,
+							bounds = bounds,
 							opacity = record.opacity,
 							clipped = record.clipped,
 							blend = record.blend,
-							raster = PsdRaster.decodeLayer(bytes, header, parse.colorModeData, record),
+							raster = raster,
 						)
 				}
 			}

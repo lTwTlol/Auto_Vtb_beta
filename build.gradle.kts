@@ -107,6 +107,7 @@ compose.desktop {
 		mainClass = "io.github.psd2live.MainKt"
 		jvmArgs += listOf("-Xmx8g", "-Dfile.encoding=UTF-8", "-Dsun.java2d.uiScale.enabled=true")
 		nativeDistributions {
+			modules("java.instrument", "java.management", "java.net.http", "java.prefs", "java.sql", "jdk.unsupported")
 			targetFormats(
 				org.jetbrains.compose.desktop.application.dsl.TargetFormat.Exe,
 				org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
@@ -123,6 +124,14 @@ compose.desktop {
 				iconFile.set(project.file("icon.ico"))
 			}
 		}
+	}
+}
+
+// Gradle 9+ pre-creates task output directories, but jlink refuses an existing
+// (even empty) --output directory. Delete it right before jlink runs.
+tasks.matching { it.name == "createRuntimeImage" }.configureEach {
+	doFirst {
+		outputs.files.forEach { it.deleteRecursively() }
 	}
 }
 

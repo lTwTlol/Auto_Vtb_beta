@@ -1481,8 +1481,9 @@ object RigBuilder {
 				// Closed-eye seam line: the eye_close centroid, else 62% down the eye white (rigger.js).
 				val closeY = eyeCloseLayers.minByOrNull { abs(it.centroidX - canvasX) }?.centroidY
 					?: (whiteBounds.top + whiteBounds.height * 0.62f)
-				val closedY = eyeClosurePoint(closeY, canvasY)
-				delta[vertex + 1] = (closedY - canvasY) / frame.height.coerceAtLeast(1e-4f) * (1f - openness)
+				val closed = eyeClosurePoint(canvasX, canvasY, closeY)
+				delta[vertex] = (closed.first - canvasX) / frame.width.coerceAtLeast(1e-4f) * (1f - openness)
+				delta[vertex + 1] = (closed.second - canvasY) / frame.height.coerceAtLeast(1e-4f) * (1f - openness)
 			}
 			MeshDeltaForm(delta)
 		}
@@ -1492,14 +1493,10 @@ object RigBuilder {
 	 * Closed-eyelid target mirroring rigger.js lid compression: every vertex collapses toward the
 	 * closed-eye seam line (closeY) with X held fixed, leaving 15% of its distance at full closure.
 	 * The keyform grid interpolates linearly with openness, which reproduces rigger.js exactly:
-	 * `y = closeY + (y - closeY) * (1 - 0.85 * (1 - vOpen))`.  A full lash ring folds onto the line
-	 * as one closed lid; a per-column arch or a hairline collapse reads wrong (see EyeClosureTest).
+	 * `y = closeY + (y - closeY) * (1 - 0.85 * (1 - vOpen))`.
 	 */
-	internal fun eyeClosurePoint(closeY: Float, sourceY: Float): Float =
-		closeY + (sourceY - closeY) * 0.15f
-
-	internal fun eyeClosurePoint(eyeWhiteBounds: Bounds, sourceY: Float): Float =
-		eyeClosurePoint(eyeWhiteBounds.top + eyeWhiteBounds.height * 0.62f, sourceY)
+	internal fun eyeClosurePoint(sourceX: Float, sourceY: Float, closeY: Float): Pair<Float, Float> =
+		sourceX to closeY + (sourceY - closeY) * 0.15f
 
 	private fun matchingEyeWhiteBounds(
 		layer: ClassifiedLayer,
@@ -1753,6 +1750,10 @@ object RigBuilder {
 			}
 			LayerType.PRESET -> {
 				when (layer.semantic.tag) {
+					SemanticTag.EYE_CLOSE -> {
+						val parameter = if (layer.semantic.side == Side.LEFT) StandardParameters.EYE_L_OPEN else StandardParameters.EYE_R_OPEN
+						scalarGrid(parameter, floatArrayOf(0f, 1f)) { open -> 1f - open }
+					}
 					// rigger.js fadeAlpha 'eyeOpen': open-eye parts fade out as the lid closes.
 					SemanticTag.EYEWHITE, SemanticTag.IRIDES -> {
 						val parameter = if (layer.semantic.side == Side.LEFT) StandardParameters.EYE_L_OPEN else StandardParameters.EYE_R_OPEN
@@ -1771,10 +1772,6 @@ object RigBuilder {
 							t * t * (3f - 2f * t)
 						}
 					} else null
-					SemanticTag.EYE_CLOSE -> {
-						val parameter = if (layer.semantic.side == Side.LEFT) StandardParameters.EYE_L_OPEN else StandardParameters.EYE_R_OPEN
-						scalarGrid(parameter, floatArrayOf(0f, 1f)) { open -> 1f - open }
-					}
 					SemanticTag.MOUTH_CLOSE -> scalarGrid(StandardParameters.MOUTH_OPEN, floatArrayOf(0f, 1f)) { 1f - it }
 					SemanticTag.TONGUE, SemanticTag.TOOTH_T, SemanticTag.TOOTH_B ->
 						scalarGrid(StandardParameters.MOUTH_OPEN, floatArrayOf(0f, 0.15f, 1f)) { open ->

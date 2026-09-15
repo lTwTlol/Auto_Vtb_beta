@@ -73,8 +73,10 @@ class PsdWriterTest {
 
 	@Test
 	fun testSyntheticRoundTrip() {
-		val w = 4
-		val h = 4
+		// Each layer is 8x8 so its single opaque component (64px) clears the reader's 40px denoise
+		// threshold; smaller synthetic layers would be dropped as noise and lose their pixels.
+		val w = 8
+		val h = 8
 
 		fun makeRgba(r: Int, g: Int, b: Int, a: Int): ByteArray {
 			val arr = ByteArray(w * h * 4)
@@ -105,17 +107,12 @@ class PsdWriterTest {
 			name = "Face_Skin",
 			groupPath = "Character/Head",
 			order = 1,
-			bounds = LayerBounds(left = 1, top = 1, width = 2, height = 2),
+			bounds = LayerBounds(left = 1, top = 1, width = w, height = h),
 			opacity = 0.8f,
 			clipped = true,
 			blend = LayerBlend.Multiply,
 			visible = true,
-			raster = LayerRaster(2, 2, byteArrayOf(
-				10, 20, 30, 200.toByte(),
-				40, 50, 60, 210.toByte(),
-				70, 80, 90, 220.toByte(),
-				100.toByte(), 110.toByte(), 120.toByte(), 230.toByte(),
-			)),
+			raster = LayerRaster(w, h, makeRgba(10, 20, 30, 200)),
 		)
 
 		val layer3 = TestSourceLayer(
@@ -123,15 +120,12 @@ class PsdWriterTest {
 			name = "Eye_Highlight",
 			groupPath = "Character/Head",
 			order = 2,
-			bounds = LayerBounds(left = 2, top = 2, width = 2, height = 1),
+			bounds = LayerBounds(left = 2, top = 2, width = w, height = h),
 			opacity = 0.5f,
 			clipped = false,
 			blend = LayerBlend.Screen,
 			visible = false,
-			raster = LayerRaster(2, 1, byteArrayOf(
-				200.toByte(), 210.toByte(), 220.toByte(), 255.toByte(),
-				230.toByte(), 240.toByte(), 250.toByte(), 255.toByte(),
-			)),
+			raster = LayerRaster(w, h, makeRgba(200, 210, 220, 255)),
 		)
 
 		val groups = listOf(
@@ -176,8 +170,8 @@ class PsdWriterTest {
 		assertEquals("Character/Head", r2.groupPath)
 		assertEquals(1, r2.bounds.left)
 		assertEquals(1, r2.bounds.top)
-		assertEquals(2, r2.bounds.width)
-		assertEquals(2, r2.bounds.height)
+		assertEquals(w, r2.bounds.width)
+		assertEquals(h, r2.bounds.height)
 		assertTrue(kotlin.math.abs(r2.opacity - 0.8f) < 0.01f)
 		assertEquals(true, r2.clipped)
 		assertEquals(LayerBlend.Multiply, r2.blend)
@@ -190,8 +184,8 @@ class PsdWriterTest {
 		assertEquals("Character/Head", r3.groupPath)
 		assertEquals(2, r3.bounds.left)
 		assertEquals(2, r3.bounds.top)
-		assertEquals(2, r3.bounds.width)
-		assertEquals(1, r3.bounds.height)
+		assertEquals(w, r3.bounds.width)
+		assertEquals(h, r3.bounds.height)
 		assertTrue(kotlin.math.abs(r3.opacity - 0.5f) < 0.01f)
 		assertEquals(false, r3.clipped)
 		assertEquals(LayerBlend.Screen, r3.blend)

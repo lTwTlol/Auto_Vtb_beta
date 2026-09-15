@@ -190,33 +190,24 @@ class PsdSyntheticTest {
 		return out.readByteArray()
 	}
 
-	private val width = 2
-	private val height = 2
+	private val width = 8
+	private val height = 8
 
 	// Distinct per-channel values (all <= 127 so they are valid Byte literals), row-major from top.
-	private val red = byteArrayOf(10, 50, 90, 120)
-	private val green = byteArrayOf(20, 60, 100, 121)
-	private val blue = byteArrayOf(30, 70, 110, 122)
-	private val alpha = byteArrayOf(40, 80, 115, 123)
-	private val expectedRgba =
-		byteArrayOf(
-			10,
-			20,
-			30,
-			40,
-			50,
-			60,
-			70,
-			80,
-			90,
-			100,
-			110,
-			115,
-			120,
-			121,
-			122,
-			123,
-		)
+	// The 8x8 grid forms one 64px connected component (>= MIN_COMPONENT_PIXELS), so PsdReader's
+	// denoise+trim keeps every pixel and this test still asserts the decoder bit-exactly.
+	private val red = ByteArray(width * height) { ((it * 7 + 3) % 118 + 10).toByte() }
+	private val green = ByteArray(width * height) { ((it * 11 + 5) % 118 + 10).toByte() }
+	private val blue = ByteArray(width * height) { ((it * 13 + 7) % 118 + 10).toByte() }
+	private val alpha = ByteArray(width * height) { ((it * 17 + 9) % 80 + 40).toByte() }
+	private val expectedRgba = ByteArray(width * height * 4) { index ->
+		when (index % 4) {
+			0 -> red[index / 4]
+			1 -> green[index / 4]
+			2 -> blue[index / 4]
+			else -> alpha[index / 4]
+		}
+	}
 
 	/**
 	 * Decodes a synthetic PSD and asserts the single layer's geometry, pixels, and stable id.
