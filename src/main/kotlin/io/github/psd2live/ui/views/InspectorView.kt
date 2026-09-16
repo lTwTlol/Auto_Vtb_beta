@@ -886,10 +886,10 @@ private fun ModelSettingsSection(
 					val motionCount = listOf(state.motionIdle, state.motionBlink, state.motionNod, state.motionShake).count { it }
 					val physicsCount = listOf(state.physicsFrontHair, state.physicsBackHair, state.physicsEyeJelly).count { it }
 					Text(
-						text = if (state.meshOnly) "(${tr("export.disabled")})" else "(${tr("export.motions")}: $motionCount · ${tr("export.physics")}: $physicsCount)",
-						style = typography.caption.copy(fontSize = 9.5.sp),
-						color = colors.textMuted,
-					)
+						text = if (state.meshOnly) "(${tr("export.disabled")})" else "(${tr("export.motions")}: $motionCount · ${tr("export.expressions")}: ${if (state.exportExpressions) 1 else 0} · ${tr("export.physics")}: $physicsCount)",
+							style = typography.caption.copy(fontSize = 9.5.sp),
+							color = colors.textMuted,
+						)
 				}
 			}
 
@@ -943,6 +943,18 @@ private fun ModelSettingsSection(
 							modifier = Modifier.weight(1f),
 						)
 					}
+
+					CompactCheckbox(
+						checked = state.exportExpressions,
+						onCheckedChange = { viewModel.setExportExpressions(it) },
+						label = tr("export.expressions"),
+						enabled = !isBusy,
+					)
+					Text(
+						text = tr("export.expressions.tip"),
+						style = typography.caption.copy(fontSize = 9.sp),
+						color = colors.textMuted,
+					)
 
 					Divider(color = colors.divider.copy(alpha = 0.3f), thickness = 0.5.dp)
 

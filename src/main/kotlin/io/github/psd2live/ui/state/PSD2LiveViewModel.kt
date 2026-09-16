@@ -448,7 +448,7 @@ class PSD2LiveViewModel : AutoCloseable {
 	}
 
 	fun applyExpressionPreset(name: String?) {
-		val preset = name?.let(EXPRESSION_PRESETS::get)
+		val preset = name?.let(io.github.psd2live.core.ExpressionPresets::byKey)
 		_state.update { current ->
 			if (preset == null) {
 				current.copy(
@@ -471,6 +471,12 @@ class PSD2LiveViewModel : AutoCloseable {
 			}
 		}
 	    markWorkspaceChanged()
+	}
+
+	fun setExportExpressions(enabled: Boolean) {
+		_state.update { it.copy(exportExpressions = enabled) }
+		scheduleRuntimeBundleUpdate()
+	    editorChanged()
 	}
 
 	fun setTexturePadding(padding: Int) {
@@ -807,6 +813,7 @@ class PSD2LiveViewModel : AutoCloseable {
 				motionBlink = true,
 				motionNod = true,
 				motionShake = true,
+				exportExpressions = true,
 				generatePhysics = true,
 				physicsFrontHair = true,
 				physicsBackHair = true,
@@ -2515,29 +2522,4 @@ internal fun previewFrameMatchesState(
 	frameAnimationEnabled: Boolean,
 ): Boolean = frameAnimationEnabled == (state.animationEnabled && !state.meshOnly)
 
-private data class ExpressionPreset(
-	val eyeL: Float,
-	val eyeR: Float,
-	val brow: Float,
-	val mouthOpen: Float,
-	val mouthForm: Float,
-)
-
-private val EXPRESSION_PRESETS: Map<String, ExpressionPreset> = linkedMapOf(
-	"neutral" to ExpressionPreset(1f, 1f, 0f, 0f, 0f),
-	"smile" to ExpressionPreset(0f, 0f, 0.45f, 0f, 0.9f),
-	"usume" to ExpressionPreset(0.5f, 0.5f, 0.35f, 1f, 0.8f),
-	"surprise" to ExpressionPreset(1f, 1f, 1f, 0.75f, -0.1f),
-	"jito" to ExpressionPreset(0.4f, 0.4f, -0.6f, 0f, -0.4f),
-	"winkL" to ExpressionPreset(0f, 1f, 0.2f, 0.4f, 0.7f),
-	"winkR" to ExpressionPreset(1f, 0f, 0.2f, 0.4f, 0.7f),
-)
-
-private val EXPRESSION_PARAM_IDS: Set<ParameterId> = setOf(
-	StandardParameters.EYE_L_OPEN,
-	StandardParameters.EYE_R_OPEN,
-	StandardParameters.BROW_L_Y,
-	StandardParameters.BROW_R_Y,
-	StandardParameters.MOUTH_OPEN,
-	StandardParameters.MOUTH_FORM,
-)
+private val EXPRESSION_PARAM_IDS: Set<ParameterId> = io.github.psd2live.core.ExpressionPresets.parameterIds

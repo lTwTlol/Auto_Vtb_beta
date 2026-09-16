@@ -2,11 +2,13 @@ package io.github.psd2live.core
 
 import io.github.psd2live.i18n.tr
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import org.umamo.format.cmo3.Cmo3
 import org.umamo.format.cmo3.model.custom.CModelSource
 import org.umamo.format.art.SourceArt
 import org.umamo.format.moc3.Moc3
 import org.umamo.format.moc3.json.FileReferences
+import org.umamo.format.moc3.json.Model3Expression
 import org.umamo.format.moc3.json.Model3Group
 import org.umamo.format.moc3.json.Model3Json
 import org.umamo.format.moc3.json.Model3Motion
@@ -255,6 +257,20 @@ class PSD2LivePipeline {
 			motions.groupBy({ it.first }, { Model3Motion(file = it.second.first) })
 		} else null
 
+		val expressions = buildList<Pair<ExpressionPreset, Pair<String, String>>> {
+			if (config.exportExpressions && !config.meshOnly) {
+				for (preset in ExpressionPresets.all) {
+					val name = "$baseName.${preset.key}.exp3.json"
+					ExpressionPresets.exp3Json(preset, parameterIds)?.let { json ->
+						add(preset to (name to json))
+					}
+				}
+			}
+		}
+		val expressionRefs = if (expressions.isEmpty()) null else expressions.map { (preset, pair) ->
+			Model3Expression(name = preset.displayName, file = pair.first)
+		}
+
 		val sidecars = buildList {
 			physics?.let {
 				Moc3.readPhysics3(it)
@@ -263,12 +279,16 @@ class PSD2LivePipeline {
 			for ((_, motionPair) in motions) {
 				add(Moc3Sidecars.PassThroughSidecar(Moc3Sidecars.SidecarKind.Motion, motionPair.first, motionPair.second))
 			}
+			for ((_, expressionPair) in expressions) {
+				add(Moc3Sidecars.PassThroughSidecar(Moc3Sidecars.SidecarKind.Expression, expressionPair.first, expressionPair.second))
+			}
 		}
 		val manifestTemplate = Model3Json(
 			version = 3,
 			fileReferences = FileReferences(
 				moc = "",
 				textures = emptyList(),
+				expressions = expressionRefs,
 				motions = motionMap,
 			),
 			groups = buildList {
@@ -309,6 +329,10 @@ class PSD2LivePipeline {
 		manifest.fileReferences.physics?.let { Moc3.readPhysics3(byName.getValue(it).bytes.decodeToString()) }
 		manifest.fileReferences.motions.orEmpty().values.flatten().forEach {
 			Json.parseToJsonElement(byName.getValue(it.file).bytes.decodeToString())
+		}
+		manifest.fileReferences.expressions.orEmpty().forEach {
+			val expression = Json.parseToJsonElement(byName.getValue(it.file).bytes.decodeToString()).jsonObject
+			require(expression.containsKey("Parameters")) { tr("error.expressionInvalid", it.name) }
 		}
 	}
 

@@ -144,6 +144,8 @@ data class PipelineConfig(
 	val motionBlink: Boolean = true,
 	val motionNod: Boolean = true,
 	val motionShake: Boolean = true,
+	/** Export the face-expression presets as Cubism `.exp3.json` files registered in the manifest. */
+	val exportExpressions: Boolean = true,
 	val generatePhysics: Boolean = true,
 	val physicsFrontHair: Boolean = true,
 	val physicsBackHair: Boolean = true,
