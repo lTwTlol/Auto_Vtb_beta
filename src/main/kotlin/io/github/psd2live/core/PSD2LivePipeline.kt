@@ -167,8 +167,28 @@ class PSD2LivePipeline {
 			val useEyeJellyPhysics = hasEyeJelly && config.generatePhysics && config.physicsEyeJelly && !config.meshOnly
 			val useBustPhysics = hasBust && config.generatePhysics && !config.meshOnly
 			val useArmPhysics = hasArms && config.generatePhysics && !config.meshOnly
-			if (useFrontHairPhysics || useBackHairPhysics || useEyeJellyPhysics || useBustPhysics || useArmPhysics || (config.generatePhysics && !config.meshOnly && config.rigEdits.physicsEdits.isNotEmpty())) {
-				Cmo3PhysicsInjector.inject(converted.model.root as CModelSource, useFrontHairPhysics, useBackHairPhysics, useEyeJellyPhysics, config.rigEdits.physicsEdits, useBustPhysics, useArmPhysics, PhysicsTuning(config.bustAmp, config.frontHairAmp, config.frontHairSoft, config.backHairAmp, config.backHairSoft, config.armSwingAmp))
+			val cmo3PhysicsParts = PhysicsGenerator.PhysicsParts(
+				frontHair = useFrontHairPhysics,
+				backHair = useBackHairPhysics,
+				eyeJelly = useEyeJellyPhysics,
+				bust = useBustPhysics,
+				arms = useArmPhysics,
+				sideHair = analysis.layers.any { it.semantic.tag == SemanticTag.SIDE_HAIR && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+				midHair = analysis.layers.any { it.semantic.tag == SemanticTag.MID_HAIR && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+				ahoge = analysis.layers.any { it.semantic.tag == SemanticTag.AHOGE && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+				skirt = analysis.layers.any { it.semantic.tag == SemanticTag.BOTTOMWEAR && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+				legs = analysis.layers.any { (it.semantic.tag == SemanticTag.LEGWEAR || it.semantic.tag == SemanticTag.FOOTWEAR) && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+				collar = analysis.layers.any { it.semantic.tag == SemanticTag.NECKWEAR && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+				headPerspective = config.generatePhysics && !config.meshOnly,
+				legDynamics = analysis.layers.any { (it.semantic.tag == SemanticTag.LEGWEAR || it.semantic.tag == SemanticTag.FOOTWEAR) && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+				bodyCore = config.generatePhysics && !config.meshOnly,
+			)
+			if (useFrontHairPhysics || useBackHairPhysics || useEyeJellyPhysics || useBustPhysics || useArmPhysics ||
+				cmo3PhysicsParts.sideHair || cmo3PhysicsParts.midHair || cmo3PhysicsParts.ahoge || cmo3PhysicsParts.skirt || cmo3PhysicsParts.legs || cmo3PhysicsParts.collar ||
+				cmo3PhysicsParts.headPerspective || cmo3PhysicsParts.legDynamics || cmo3PhysicsParts.bodyCore ||
+				(config.generatePhysics && !config.meshOnly && config.rigEdits.physicsEdits.isNotEmpty())
+			) {
+				Cmo3PhysicsInjector.inject(converted.model.root as CModelSource, cmo3PhysicsParts, config.rigEdits.physicsEdits, PhysicsTuning(config.bustAmp, config.frontHairAmp, config.frontHairSoft, config.backHairAmp, config.backHairSoft, config.armSwingAmp))
 			}
 			BezierWarp.configureEditor(converted.model.root as CModelSource)
 			val bytes = Cmo3.write(converted.model)
@@ -217,8 +237,28 @@ class PSD2LivePipeline {
 		val useEyeJellyPhysics = hasEyeJelly && config.generatePhysics && config.physicsEyeJelly && !config.meshOnly
 		val useBustPhysics = hasBust && config.generatePhysics && !config.meshOnly
 		val useArmPhysics = hasArms && config.generatePhysics && !config.meshOnly
-		val physics = if (useFrontHairPhysics || useBackHairPhysics || useEyeJellyPhysics || useBustPhysics || useArmPhysics || (config.generatePhysics && !config.meshOnly && config.rigEdits.physicsEdits.isNotEmpty())) {
-			PhysicsGenerator.generate(useFrontHairPhysics, useBackHairPhysics, useEyeJellyPhysics, parameterIds, config.rigEdits.physicsEdits, useBustPhysics, useArmPhysics, PhysicsTuning(config.bustAmp, config.frontHairAmp, config.frontHairSoft, config.backHairAmp, config.backHairSoft, config.armSwingAmp))?.let(CubismJson::normalize)
+		val physicsParts = PhysicsGenerator.PhysicsParts(
+			frontHair = useFrontHairPhysics,
+			backHair = useBackHairPhysics,
+			eyeJelly = useEyeJellyPhysics,
+			bust = useBustPhysics,
+			arms = useArmPhysics,
+			sideHair = analysis.layers.any { it.semantic.tag == SemanticTag.SIDE_HAIR && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+			midHair = analysis.layers.any { it.semantic.tag == SemanticTag.MID_HAIR && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+			ahoge = analysis.layers.any { it.semantic.tag == SemanticTag.AHOGE && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+			skirt = analysis.layers.any { it.semantic.tag == SemanticTag.BOTTOMWEAR && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+			legs = analysis.layers.any { (it.semantic.tag == SemanticTag.LEGWEAR || it.semantic.tag == SemanticTag.FOOTWEAR) && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+			collar = analysis.layers.any { it.semantic.tag == SemanticTag.NECKWEAR && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+			headPerspective = config.generatePhysics && !config.meshOnly,
+			legDynamics = analysis.layers.any { (it.semantic.tag == SemanticTag.LEGWEAR || it.semantic.tag == SemanticTag.FOOTWEAR) && it.opaquePixels > 0 } && config.generatePhysics && !config.meshOnly,
+			bodyCore = config.generatePhysics && !config.meshOnly,
+		)
+		val physics = if (physicsParts.frontHair || physicsParts.backHair || physicsParts.eyeJelly || physicsParts.bust || physicsParts.arms ||
+			physicsParts.sideHair || physicsParts.midHair || physicsParts.ahoge || physicsParts.skirt || physicsParts.legs || physicsParts.collar ||
+			physicsParts.headPerspective || physicsParts.legDynamics || physicsParts.bodyCore ||
+			(config.generatePhysics && !config.meshOnly && config.rigEdits.physicsEdits.isNotEmpty())
+		) {
+			PhysicsGenerator.generate(physicsParts, parameterIds, config.rigEdits.physicsEdits, PhysicsTuning(config.bustAmp, config.frontHairAmp, config.frontHairSoft, config.backHairAmp, config.backHairSoft, config.armSwingAmp))?.let(CubismJson::normalize)
 		} else null
 
 		val motions = buildList<Pair<String, Pair<String, String>>> {

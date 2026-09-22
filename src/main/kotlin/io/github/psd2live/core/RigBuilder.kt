@@ -58,8 +58,22 @@ object StandardParameters {
 	val BREATH = ParameterId("ParamBreath")
 	val BUST = ParameterId("ParamBust")
 	val BUST_X = ParameterId("ParamBustX")
-	val HAIR_FRONT = ParameterId("ParamHairFront")
-	val HAIR_BACK = ParameterId("ParamHairBack")
+		val HAIR_FRONT = ParameterId("ParamHairFront")
+		val HAIR_BACK = ParameterId("ParamHairBack")
+		val HAIR_SIDE = ParameterId("ParamHairSide")
+		val HAIR_MID = ParameterId("ParamHairMid")
+		val AHOGE_SWING = ParameterId("ParamAhoge")
+		val SKIRT_SWING = ParameterId("ParamSkirtSwing")
+		val COLLAR_SWING = ParameterId("ParamCollarSwing")
+		val SKIRT_SWING_Y = ParameterId("ParamSkirtSwingY")
+		val HEAD_OX = ParameterId("ParamHeadOX")
+		val HEAD_OY = ParameterId("ParamHeadOY")
+		val HEAD_OZ = ParameterId("ParamHeadOZ")
+		val BODY_IZ = ParameterId("ParamBodyIZ")
+		val LEG_X2 = ParameterId("ParamLegX2")
+		val LEG_Z11 = ParameterId("ParamLegZ11")
+		val LEG_Z22 = ParameterId("ParamLegZ22")
+		val BODY_COG_Z = ParameterId("ParamBodyCogZ")
 	val ARM_SWING_L = ParameterId("ParamArmSwingL")
 	val ARM_SWING_R = ParameterId("ParamArmSwingR")
 
@@ -85,6 +99,20 @@ object StandardParameters {
 			Parameter(BUST_X, tr("model.parameter.bustX"), -1f, 1f, 0f),
 			Parameter(HAIR_FRONT, tr("model.parameter.hairFront"), -1f, 1f, 0f),
 			Parameter(HAIR_BACK, tr("model.parameter.hairBack"), -1f, 1f, 0f),
+			Parameter(HAIR_SIDE, tr("model.parameter.hairSide"), -1f, 1f, 0f),
+			Parameter(HAIR_MID, tr("model.parameter.hairMid"), -1f, 1f, 0f),
+			Parameter(AHOGE_SWING, tr("model.parameter.ahoge"), -1f, 1f, 0f),
+			Parameter(SKIRT_SWING, tr("model.parameter.skirtSwing"), -1f, 1f, 0f),
+			Parameter(COLLAR_SWING, tr("model.parameter.collarSwing"), -1f, 1f, 0f),
+			Parameter(SKIRT_SWING_Y, tr("model.parameter.skirtSwingY"), -1f, 1f, 0f),
+			Parameter(HEAD_OX, tr("model.parameter.headOX"), -30f, 30f, 0f),
+			Parameter(HEAD_OY, tr("model.parameter.headOY"), -30f, 30f, 0f),
+			Parameter(HEAD_OZ, tr("model.parameter.headOZ"), -30f, 30f, 0f),
+			Parameter(BODY_IZ, tr("model.parameter.bodyIZ"), -10f, 10f, 0f),
+			Parameter(LEG_X2, tr("model.parameter.legX2"), -10f, 10f, 0f),
+			Parameter(LEG_Z11, tr("model.parameter.legZ11"), -10f, 10f, 0f),
+			Parameter(LEG_Z22, tr("model.parameter.legZ22"), -10f, 10f, 0f),
+			Parameter(BODY_COG_Z, tr("model.parameter.bodyCogZ"), -10f, 10f, 0f),
 			Parameter(ARM_SWING_L, tr("model.parameter.armSwingL"), -30f, 30f, 0f),
 			Parameter(ARM_SWING_R, tr("model.parameter.armSwingR"), -30f, 30f, 0f),
 		)
@@ -112,10 +140,27 @@ object RigBuilder {
 	private val faceWarpId = DeformerId("DeformFaceNinePose")
 	private val faceContourId = DeformerId("DeformFaceContour")
 	private val featureDisplacementId = DeformerId("DeformFeatureDisplacement")
+	// The mouth keeps the ORIGINAL feature-displacement motion (raw AngleX/Y only); the
+	// 透视 OX/OY lag axes stay exclusive to the eye/brow stack.
+	private val mouthDisplacementId = DeformerId("DeformMouthDisplacement")
 	private val frontHairFollowWarpId = DeformerId("DeformHairFrontFollow")
 	private val frontHairPhysicsWarpId = DeformerId("DeformHairFrontPhysics")
 	private val backHairFollowWarpId = DeformerId("DeformHairBackFollow")
 	private val backHairPhysicsWarpId = DeformerId("DeformHairBackPhysics")
+	private val sideHairFollowWarpId = DeformerId("DeformHairSideFollow")
+	private val sideHairPhysicsWarpId = DeformerId("DeformHairSidePhysics")
+	private val midHairFollowWarpId = DeformerId("DeformHairMidFollow")
+	private val midHairPhysicsWarpId = DeformerId("DeformHairMidPhysics")
+	private val ahogeFollowWarpId = DeformerId("DeformAhogeFollow")
+	private val ahogePhysicsWarpId = DeformerId("DeformAhogePhysics")
+	private val skirtPhysicsWarpId = DeformerId("DeformSkirtPhysics")
+	private val collarPhysicsWarpId = DeformerId("DeformCollarPhysics")
+	private val legDragLId = DeformerId("DeformLegDragL")
+	private val legDragRId = DeformerId("DeformLegDragR")
+	private val legRotLId = DeformerId("DeformLegRotL")
+	private val legRotRId = DeformerId("DeformLegRotR")
+	private val legRotContainerLId = DeformerId("DeformLegRotContainerL")
+	private val legRotContainerRId = DeformerId("DeformLegRotContainerR")
 	private val eyesWarpId = DeformerId("DeformEyes")
 	private val browsWarpId = DeformerId("DeformBrows")
 	private val earsWarpId = DeformerId("DeformEars")
@@ -187,8 +232,25 @@ object RigBuilder {
 			.expanded(0.025f)
 		val frontHairCandidates = layoutRigLayers.filter { it.semantic.tag == SemanticTag.FRONT_HAIR && it.opaquePixels > 0 }
 		val backHairCandidates = layoutRigLayers.filter { it.semantic.tag == SemanticTag.BACK_HAIR && it.opaquePixels > 0 }
+		val sideHairCandidates = layoutRigLayers.filter { it.semantic.tag == SemanticTag.SIDE_HAIR && it.opaquePixels > 0 }
+		val midHairCandidates = layoutRigLayers.filter { it.semantic.tag == SemanticTag.MID_HAIR && it.opaquePixels > 0 }
+		val ahogeCandidates = layoutRigLayers.filter { it.semantic.tag == SemanticTag.AHOGE && it.opaquePixels > 0 }
+		val skirtCandidates = layoutRigLayers.filter { it.semantic.tag == SemanticTag.BOTTOMWEAR && it.opaquePixels > 0 }
+		val collarCandidates = layoutRigLayers.filter { it.semantic.tag == SemanticTag.NECKWEAR && it.opaquePixels > 0 }
+		val legCandidates = layoutRigLayers.filter {
+			(it.semantic.tag == SemanticTag.LEGWEAR || it.semantic.tag == SemanticTag.FOOTWEAR) && it.opaquePixels > 0
+		}
 		val frontHairFrame = frontHairCandidates.map { it.bounds }.takeIf { it.isNotEmpty() }?.reduce(Bounds::union)?.expanded(0.04f)
 		val backHairFrame = backHairCandidates.map { it.bounds }.takeIf { it.isNotEmpty() }?.reduce(Bounds::union)?.expanded(0.04f)
+		val sideHairFrame = sideHairCandidates.map { it.bounds }.takeIf { it.isNotEmpty() }?.reduce(Bounds::union)?.expanded(0.04f)
+		val midHairFrame = midHairCandidates.map { it.bounds }.takeIf { it.isNotEmpty() }?.reduce(Bounds::union)?.expanded(0.04f)
+		val ahogeFrame = ahogeCandidates.map { it.bounds }.takeIf { it.isNotEmpty() }?.reduce(Bounds::union)?.expanded(0.06f)
+		val skirtFrame = skirtCandidates.map { it.bounds }.takeIf { it.isNotEmpty() }?.reduce(Bounds::union)?.expanded(0.03f)
+		val collarFrame = collarCandidates.map { it.bounds }.takeIf { it.isNotEmpty() }?.reduce(Bounds::union)?.expanded(0.05f)
+		val legFrameBySide = legCandidates
+			.filter { it.semantic.side != Side.NONE }
+			.groupBy { it.semantic.side }
+			.mapValues { (_, layers) -> layers.map { it.bounds }.reduce(Bounds::union).expanded(0.03f) }
 
 		val headPartId = PartId("PartHead")
 		val facePartId = PartId("PartFace")
@@ -198,6 +260,14 @@ object RigBuilder {
 		val bodyPartId = PartId("PartBody")
 		val extraPartId = PartId("PartExtra")
 		val shouldBuildDeformers = !config.meshOnly && config.generateDeformers
+		val secondaryFrames = SecondaryPhysicsFrames(
+			sideHair = sideHairFrame,
+			midHair = midHairFrame,
+			ahoge = ahogeFrame,
+			skirt = skirtFrame,
+			collar = collarFrame,
+			legBySide = legFrameBySide,
+		)
 		val deformerResult = if (shouldBuildDeformers) {
 			buildDeformers(
 				analysis,
@@ -208,6 +278,7 @@ object RigBuilder {
 				faceFrame,
 				frontHairFrame,
 				backHairFrame,
+				secondaryFrames,
 				headPartId,
 				facePartId,
 				frontHairPartId,
@@ -248,6 +319,7 @@ object RigBuilder {
 		frameByDeformer[faceWarpId.raw] = faceFrame
 		frameByDeformer[faceContourId.raw] = faceFrame
 		frameByDeformer[featureDisplacementId.raw] = faceFrame
+		frameByDeformer[mouthDisplacementId.raw] = faceFrame
 		for (region in faceRig.regions) {
 			frameByDeformer[featureWarpId(region).raw] = region.bounds
 			if (region.feature == FaceFeature.IRIS) {
@@ -262,6 +334,30 @@ object RigBuilder {
 			frameByDeformer[backHairFollowWarpId.raw] = it
 			frameByDeformer[backHairPhysicsWarpId.raw] = it
 		}
+		sideHairFrame?.let {
+			frameByDeformer[sideHairFollowWarpId.raw] = it
+			frameByDeformer[sideHairPhysicsWarpId.raw] = it
+		}
+		midHairFrame?.let {
+			frameByDeformer[midHairFollowWarpId.raw] = it
+			frameByDeformer[midHairPhysicsWarpId.raw] = it
+		}
+		ahogeFrame?.let {
+			frameByDeformer[ahogeFollowWarpId.raw] = it
+			frameByDeformer[ahogePhysicsWarpId.raw] = it
+		}
+		skirtFrame?.let { frameByDeformer[skirtPhysicsWarpId.raw] = it }
+		legFrameBySide[Side.LEFT]?.let {
+			frameByDeformer[legRotLId.raw] = it
+			frameByDeformer[legRotContainerLId.raw] = it
+			frameByDeformer[legDragLId.raw] = it
+		}
+		legFrameBySide[Side.RIGHT]?.let {
+			frameByDeformer[legRotRId.raw] = it
+			frameByDeformer[legRotContainerRId.raw] = it
+			frameByDeformer[legDragRId.raw] = it
+		}
+		collarFrame?.let { frameByDeformer[collarPhysicsWarpId.raw] = it }
 		frameByDeformer.putAll(deformerResult.pairFrames)
 
 		val idCounts = mutableMapOf<String, Int>()
@@ -339,7 +435,7 @@ object RigBuilder {
 			val rigLayer = rigLayerById.getValue(layer.source.id.raw)
 			val defaultParentAndFrame = deformerResult.armParentByLayerId[layer.source.id.raw]
 				?: deformerResult.pairedParentByLayerId[layer.source.id.raw]
-				?: parentAndFrame(layer, faceRig, analysis.anchors, characterFrame, headFrame, faceFrame, frontHairFrame, backHairFrame)
+				?: parentAndFrame(layer, faceRig, analysis.anchors, characterFrame, headFrame, faceFrame, frontHairFrame, backHairFrame, secondaryFrames)
 			val hasParentOverride = config.parentOverrides.containsKey(layer.source.id.raw)
 			val overrideParentRaw = config.parentOverrides[layer.source.id.raw]
 			val effectiveParentId: DeformerId? = if (hasParentOverride) {
@@ -610,13 +706,21 @@ object RigBuilder {
 		bodyAngleZ: Float,
 		breathValue: Float,
 		strength: Float,
+		upperIz: Float = 0f,
+		cogZ: Float = 0f,
 	): Pair<Float, Float> {
 		val boundedStrength = strength.coerceIn(0f, 2f)
 		val z = bodyAngleZ / 10f * boundedStrength
 		val breath = breathValue.coerceIn(0f, 1f) * boundedStrength
 		val chest = kotlin.math.exp(-((v - 0.42f) * (v - 0.42f)) / 0.035f)
-		val bx = u + (u - 0.5f) * breath * chest * 0.025f
+		var bx = u + (u - 0.5f) * breath * chest * 0.025f
 		val by = v - breath * chest * 0.012f
+		// 上半身 IZ: a manual twist - the upper rows shear sideways proportionally to
+		// their distance from the spine, reading as a torso rotation in depth.
+		bx += (upperIz / 10f) * 0.028f * (1f - v) * ((u - 0.5f) * 2f)
+		// 重心Z: the whole upper mass counter-shifts against the body roll (physics-driven),
+		// so the figure appears to keep its weight over its legs.
+		bx += (cogZ / 10f) * 0.018f * (1f - v)
 		val angle = z * 0.028f
 		if (abs(angle) < 1e-4f) return bx to by
 		val cosA = cos(angle)
@@ -695,6 +799,9 @@ object RigBuilder {
 		yawParallax: Float,
 		pitchParallax: Float,
 		yawPerspective: Float = 0f,
+		perspectiveX: Float = 0f,
+		perspectiveY: Float = 0f,
+		perspectiveZ: Float = 0f,
 	): Pair<Float, Float> {
 		val yaw = angleX / 45f
 		val pitch = angleY / 30f
@@ -703,8 +810,12 @@ object RigBuilder {
 		// turning signed pitch into a global height scale.
 		val pitchDepthWeight = 0.78f + sin(PI * v).toFloat().coerceAtLeast(0f) * 0.22f
 		val uPerspective = u + yaw * yawPerspective * 4f * u * (1f - u)
-		return (inHead.left + uPerspective * inHead.width + yaw * yawParallax * yawDepthWeight) to
-			(inHead.top + v * inHead.height + pitch * pitchParallax * pitchDepthWeight)
+		// 透视 lag: the hair trails the smoothed OX/OY by a small counter-shift, heavier toward
+		// the tips; OZ adds a slight horizontal drag against the head roll.
+		val lagX = -(perspectiveX / 30f) * 0.012f * (0.55f + 0.45f * v) - (perspectiveZ / 30f) * 0.008f * v
+		val lagY = -(perspectiveY / 30f) * 0.006f * (0.7f + 0.3f * v)
+		return (inHead.left + uPerspective * inHead.width + yaw * yawParallax * yawDepthWeight + lagX * inHead.width) to
+			(inHead.top + v * inHead.height + pitch * pitchParallax * pitchDepthWeight + lagY * inHead.height)
 	}
 
 	internal fun hairPhysicsPoint(
@@ -722,6 +833,17 @@ object RigBuilder {
 		return (u + lateral) to (v - lift)
 	}
 
+	/** Bounds of the optional secondary physics chains; a null frame skips that chain. */
+	internal data class SecondaryPhysicsFrames(
+		val sideHair: Bounds? = null,
+		val midHair: Bounds? = null,
+		val ahoge: Bounds? = null,
+		val skirt: Bounds? = null,
+		val collar: Bounds? = null,
+		/** Per-side leg frames from the L/R auto-split; an absent side has no leg rig. */
+		val legBySide: Map<Side, Bounds> = emptyMap(),
+	)
+
 	private fun buildDeformers(
 		analysis: PipelineAnalysis,
 		rigLayerById: Map<String, ClassifiedLayer>,
@@ -731,6 +853,7 @@ object RigBuilder {
 		faceFrame: Bounds,
 		frontHair: Bounds?,
 		backHair: Bounds?,
+		secondary: SecondaryPhysicsFrames,
 		headPartId: PartId,
 		facePartId: PartId,
 		frontHairPartId: PartId,
@@ -751,11 +874,16 @@ object RigBuilder {
 		val body = Deformer.Warp(bodyWarpId, tr("model.deformer.body"), null, bodyPartId, 6, 4, true, bodyGrid)
 
 		val breathGrid = warpGrid(
-			listOf(axis(StandardParameters.BODY_Z, -10f, 0f, 10f), axis(StandardParameters.BREATH, 0f, 0.5f, 1f)),
+			listOf(
+				axis(StandardParameters.BODY_Z, -10f, 0f, 10f),
+				axis(StandardParameters.BREATH, 0f, 0.5f, 1f),
+				axis(StandardParameters.BODY_IZ, -10f, 0f, 10f),
+				axis(StandardParameters.BODY_COG_Z, -10f, 0f, 10f),
+			),
 			columns = 4,
 			rows = 6,
 		) { u, v, values ->
-			bodySecondaryWarpPoint(character, bodyPivotU, u, v, values[0], values[1], config.bodyStrength)
+			bodySecondaryWarpPoint(character, bodyPivotU, u, v, values[0], values[1], config.bodyStrength, values[2], values[3])
 		}
 		val breath = Deformer.Warp(breathWarpId, tr("model.deformer.breath"), bodyWarpId, bodyPartId, 6, 4, true, breathGrid)
 
@@ -818,12 +946,25 @@ object RigBuilder {
 
 		// Identity at neutral, in the face's normalized space: the parent surface is inherited
 		// exactly once. Both directional bows affect every row/column, not just the center knot.
-		val displacementGrid = warpGrid(ninePoseAxes(), columns = 8, rows = 8) { u, v, values ->
+		val displacementGrid = warpGrid(
+			ninePoseAxes() + listOf(
+				axis(StandardParameters.HEAD_OX, -30f, 0f, 30f),
+				axis(StandardParameters.HEAD_OY, -30f, 0f, 30f),
+			),
+			columns = 8,
+			rows = 8,
+		) { u, v, values ->
 			featureDisplacementPoint(u, v, values[0], values[1], config.headTurnStrength,
-				faceFrame.width / faceFrame.height.coerceAtLeast(1e-4f))
+				faceFrame.width / faceFrame.height.coerceAtLeast(1e-4f), values[2], values[3])
 		}
 		val displacement = Deformer.Warp(featureDisplacementId, tr("model.deformer.featureDisplacement"),
 			faceWarpId, facePartId, 8, 8, true, displacementGrid)
+		val mouthDisplacementGrid = warpGrid(ninePoseAxes(), columns = 8, rows = 8) { u, v, values ->
+			featureDisplacementPoint(u, v, values[0], values[1], config.headTurnStrength,
+				faceFrame.width / faceFrame.height.coerceAtLeast(1e-4f))
+		}
+		val mouthDisplacement = Deformer.Warp(mouthDisplacementId, tr("model.deformer.mouthDisplacement"),
+			faceWarpId, facePartId, 8, 8, true, mouthDisplacementGrid)
 		val socketY = normalizeY(faceRig.eyeLineY, faceFrame).coerceIn(0.05f, 0.95f)
 		val contourGrid = warpGrid(
 			listOf(axis(StandardParameters.ANGLE_X, *NinePoseFaceRig.angleXKeys)), columns = 8, rows = 16,
@@ -836,7 +977,10 @@ object RigBuilder {
 		deformers += headContainer
 		deformers += face
 		deformers += contour
-		if (config.featureDisplacementEnabled) deformers += displacement
+		if (config.featureDisplacementEnabled) {
+			deformers += displacement
+			deformers += mouthDisplacement
+		}
 		val pairFrames = mutableMapOf<String, Bounds>()
 		val pairedParentByLayerId = mutableMapOf<String, Pair<DeformerId, Bounds>>()
 
@@ -885,8 +1029,12 @@ object RigBuilder {
 					faceWarpId to faceFrame
 				}
 				else -> {
-					val p = if (config.featureDisplacementEnabled && region.feature in setOf(FaceFeature.EYE, FaceFeature.BROW, FaceFeature.MOUTH))
-						featureDisplacementId else faceWarpId
+					val p = when {
+						!config.featureDisplacementEnabled -> faceWarpId
+						region.feature == FaceFeature.MOUTH -> mouthDisplacementId
+						region.feature in setOf(FaceFeature.EYE, FaceFeature.BROW) -> featureDisplacementId
+						else -> faceWarpId
+					}
 					p to faceFrame
 				}
 			}
@@ -940,6 +1088,139 @@ object RigBuilder {
 				rows = 6,
 				swayRatio = 0.10f,
 				curlRatio = 0.025f,
+			)
+		}
+		// Secondary hair layers - each gets its own follow + physics chain (multi-hair-layer rigs):
+		// side hair tapers like front hair, mid hair swings softest (inner layer), and the ahoge is
+		// deliberately bouncier with a taller grid so the tip curls.  Pendulum tunings live in
+		// PhysicsGenerator; ratios here only shape the warp falloff.
+		secondary.sideHair?.let { frame ->
+			deformers += hairFollowWarp(
+				sideHairFollowWarpId,
+				tr("model.deformer.sideHairFollow"),
+				frame,
+				head,
+				frontHairPartId,
+				-0.016f,
+				0.002f,
+				yawPerspective = 0.06f,
+			)
+			deformers += hairPhysicsWarp(
+				sideHairPhysicsWarpId,
+				tr("model.deformer.sideHairPhysics"),
+				StandardParameters.HAIR_SIDE,
+				sideHairFollowWarpId,
+				frame,
+				frontHairPartId,
+				rows = 4,
+				swayRatio = 0.12f,
+				curlRatio = 0.030f,
+			)
+		}
+		secondary.midHair?.let { frame ->
+			deformers += hairFollowWarp(
+				midHairFollowWarpId,
+				tr("model.deformer.midHairFollow"),
+				frame,
+				head,
+				backHairPartId,
+				-0.018f,
+				0.004f,
+			)
+			deformers += hairPhysicsWarp(
+				midHairPhysicsWarpId,
+				tr("model.deformer.midHairPhysics"),
+				StandardParameters.HAIR_MID,
+				midHairFollowWarpId,
+				frame,
+				backHairPartId,
+				rows = 5,
+				swayRatio = 0.09f,
+				curlRatio = 0.022f,
+			)
+		}
+		secondary.ahoge?.let { frame ->
+			deformers += hairFollowWarp(
+				ahogeFollowWarpId,
+				tr("model.deformer.ahogeFollow"),
+				frame,
+				head,
+				frontHairPartId,
+				-0.012f,
+				-0.002f,
+				yawPerspective = 0.04f,
+			)
+			deformers += hairPhysicsWarp(
+				ahogePhysicsWarpId,
+				tr("model.deformer.ahogePhysics"),
+				StandardParameters.AHOGE_SWING,
+				ahogeFollowWarpId,
+				frame,
+				frontHairPartId,
+				rows = 3,
+				swayRatio = 0.20f,
+				curlRatio = 0.060f,
+			)
+		}
+		// Clothing chains: skirt hem, legs and collar each lag the body with their own pendulum
+		// (bottom edge free, top edge pinned), matching the body-driven cloth chains of mature rigs.
+		secondary.skirt?.let { frame ->
+			deformers += skirtSwayWarp(
+				skirtPhysicsWarpId,
+				tr("model.deformer.skirtPhysics"),
+				breathWarpId,
+				frame,
+				character,
+				bodyPartId,
+			)
+		}
+		// Legs - production-reference rig: a slow whole-leg X drag + a small hip rotation.
+		// All inputs are heavily-damped physics params, so the legs track the torso smoothly
+		// and never wobble on their own.
+		for (side in listOf(Side.LEFT, Side.RIGHT)) {
+			val frame = secondary.legBySide[side] ?: continue
+			val isLeft = side == Side.LEFT
+			val rotId = if (isLeft) legRotLId else legRotRId
+			val containerId = if (isLeft) legRotContainerLId else legRotContainerRId
+			val dragId = if (isLeft) legDragLId else legDragRId
+			val pivotCanvasX = frame.centerX
+			val pivotCanvasY = frame.top
+			val pivotX = normalizeX(pivotCanvasX, character)
+			val pivotY = normalizeY(pivotCanvasY, character)
+			val rotGrid = oneDimGrid(StandardParameters.LEG_Z11, floatArrayOf(-10f, 0f, 10f)) { value ->
+				RotationPivotForm(pivotX, pivotY, value * 0.35f, 1f)
+			}
+			deformers += Deformer.Rotation(rotId, tr("model.deformer.legRot"), breathWarpId, bodyPartId, 0f, rotGrid)
+			val containerGrid = warpGrid(emptyList(), columns = 3, rows = 3) { u, v, _ ->
+				(frame.left + u * frame.width - pivotCanvasX) to (frame.top + v * frame.height - pivotCanvasY)
+			}
+			deformers += Deformer.Warp(containerId, tr("model.deformer.legRotContainer"), rotId, bodyPartId, 3, 3, true, containerGrid)
+			val dragGrid = warpGrid(
+				listOf(
+					axis(StandardParameters.LEG_X2, -10f, 0f, 10f),
+					axis(StandardParameters.LEG_Z22, -10f, 0f, 10f),
+				),
+				columns = 3,
+				rows = 4,
+			) { u, v, values ->
+				val drag = (values[0] / 10f) * 0.30f * v + (values[1] / 10f) * 0.08f * v
+				(u + drag) to v
+			}
+			deformers += Deformer.Warp(dragId, tr("model.deformer.legDrag"), containerId, bodyPartId, 4, 3, true, dragGrid)
+		}
+		secondary.collar?.let { frame ->
+			deformers += clothPhysicsWarp(
+				collarPhysicsWarpId,
+				tr("model.deformer.collarPhysics"),
+				StandardParameters.COLLAR_SWING,
+				null,
+				breathWarpId,
+				frame,
+				character,
+				bodyPartId,
+				rows = 3,
+				swayRatio = 0.15f,
+				curlRatio = 0.040f,
 			)
 		}
 
@@ -1005,7 +1286,7 @@ object RigBuilder {
 				!isHandledByFaceRegion(layer, faceRig)
 		}
 		val grouped = candidateLayers.groupBy { layer ->
-			val (defaultParentId, _) = parentAndFrame(layer, faceRig, analysis.anchors, character, head, faceFrame, frontHair, backHair)
+			val (defaultParentId, _) = parentAndFrame(layer, faceRig, analysis.anchors, character, head, faceFrame, frontHair, backHair, secondary)
 			val baseName = pairBaseName(layer.source.name)
 			defaultParentId to baseName.lowercase(Locale.ROOT).trim()
 		}
@@ -1014,7 +1295,7 @@ object RigBuilder {
 			val hasRight = pairLayers.any { it.semantic.side == Side.RIGHT }
 			if (!hasLeft || !hasRight) continue
 
-			val (defaultParentId, defaultParentFrame) = parentAndFrame(pairLayers.first(), faceRig, analysis.anchors, character, head, faceFrame, frontHair, backHair)
+			val (defaultParentId, defaultParentFrame) = parentAndFrame(pairLayers.first(), faceRig, analysis.anchors, character, head, faceFrame, frontHair, backHair, secondary)
 			val cleanBaseName = pairBaseName(pairLayers.first().source.name)
 			val pairId = uniquePairDeformerId(cleanBaseName, pairLayers.first().semantic.tag, usedDeformerIds)
 			val pairName = tr("model.deformer.pair", cleanBaseName)
@@ -1135,9 +1416,14 @@ object RigBuilder {
 	internal fun featureDisplacementPoint(
 		u: Float, v: Float, angleX: Float, angleY: Float, strength: Float,
 		aspectRatio: Float = 1f,
+		perspectiveX: Float = 0f, perspectiveY: Float = 0f,
 	): Pair<Float, Float> {
 		val yaw = (angleX / 45f * strength).coerceIn(-1f, 1f)
 		val pitch = (angleY / 30f * strength).coerceIn(-1f, 1f)
+		// 透视 lag: the feature stack drags a fraction behind the head turn (OX/OY are the
+		// physics-smoothed angles), reading as soft depth rather than a rigid turn.
+		val lagX = -(perspectiveX / 30f) * 0.010f
+		val lagY = -(perspectiveY / 30f) * 0.006f
 		// Cubic Bezier with endpoints 0 and handles 4/3 peaks at 1 at t=1/2.
 		fun bow(t: Float): Float = BezierWarp.cubic(0f, 4f / 3f, 4f / 3f, 0f, t)
 		val x = 0.5f + (u - 0.5f) * (1f - 0.15f * abs(yaw)) + yaw * (0.025f + 0.055f * bow(v))
@@ -1165,8 +1451,8 @@ object RigBuilder {
 		val dy = y - centerY
 		val cosine = cos(radians)
 		val sine = sin(radians)
-		return (centerX + (dx * cosine - dy * sine) / aspectRatio) to
-			(centerY + dx * sine + dy * cosine)
+		return (centerX + (dx * cosine - dy * sine) / aspectRatio + lagX) to
+			(centerY + dx * sine + dy * cosine + lagY)
 	}
 
 	private fun featureWarp(
@@ -1233,12 +1519,18 @@ object RigBuilder {
 		yawPerspective: Float = 0f,
 	): Deformer.Warp {
 		val inHead = mapBounds(frame, head)
+		// 透视 perspective: the hair mass drags a beat behind the head turn, driven by the
+		// physics-lagged OX/OY/OZ chains instead of the raw angles.
 		val grid = warpGrid(
-			ninePoseAxes(),
+			ninePoseAxes() + listOf(
+				axis(StandardParameters.HEAD_OX, -30f, 0f, 30f),
+				axis(StandardParameters.HEAD_OY, -30f, 0f, 30f),
+				axis(StandardParameters.HEAD_OZ, -30f, 0f, 30f),
+			),
 			3,
 			4,
 		) { u, v, values ->
-			hairFollowPoint(inHead, u, v, values[0], values[1], yawParallax, pitchParallax, yawPerspective)
+			hairFollowPoint(inHead, u, v, values[0], values[1], yawParallax, pitchParallax, yawPerspective, values[2], values[3], values[4])
 		}
 		return Deformer.Warp(id, name, headWarpId, part, 4, 3, true, grid)
 	}
@@ -1268,6 +1560,87 @@ object RigBuilder {
 		return Deformer.Warp(id, name, parent, part, rows, 3, true, grid)
 	}
 
+	/**
+	 * Body-driven cloth chain (skirt hem / legs / collar).  Unlike a hair physics warp - whose
+	 * parent lattice EQUALS the hair region - these hang directly under the breath warp whose
+	 * lattice spans the whole character, so the identity grid must first place the lattice onto
+	 * [frame]'s region INSIDE [parentFrame] (the same region mapping hairFollowWarp does into the
+	 * head).  Without it the lattice's [0,1] maps onto the parent's full [0,1] and the mesh is
+	 * stretched across the entire character.  Sway/curl keep the same pixel magnitudes as the
+	 * hair recipe (offsets are computed in the warp's own lattice units, then placed).
+	 */
+	/**
+	 * Reference-skirt sway (Warp264 recipe): ONE smooth arc over the whole hem - waist pinned,
+	 * peak just below mid, hem trailing at about half - LINEAR in both physics params.  No
+	 * tip-only v-cubed weighting and no squared curl term: both concentrate motion at the hem
+	 * and the curl doubles the oscillation frequency, which reads as flapping in VTube Studio.
+	 * Amplitudes measured from the production warp: up to ~26% of skirt width per unit X,
+	 * ~6% of skirt height per unit Y.
+	 */
+	private fun skirtArc(v: Float): Float {
+		val px = floatArrayOf(0.00f, 0.15f, 0.35f, 0.50f, 0.70f, 0.85f, 1.00f)
+		val py = floatArrayOf(0.02f, 0.30f, 0.85f, 1.00f, 0.90f, 0.70f, 0.50f)
+		val t = v.coerceIn(0f, 1f) * 6f
+		val i = kotlin.math.min(5, t.toInt())
+		val frac = t - i
+		return py[i] + (py[i + 1] - py[i]) * frac
+	}
+
+	private fun skirtSwayWarp(
+		id: DeformerId,
+		name: String,
+		parent: DeformerId,
+		frame: Bounds,
+		parentFrame: Bounds,
+		part: PartId,
+	): Deformer.Warp {
+		val inParent = mapBounds(frame, parentFrame)
+		val grid = warpGrid(
+			listOf(
+				axis(StandardParameters.SKIRT_SWING, -1f, 0f, 1f),
+				axis(StandardParameters.SKIRT_SWING_Y, -1f, 0f, 1f),
+			),
+			columns = 3,
+			rows = 8,
+		) { u, v, values ->
+			val arc = skirtArc(v)
+			val dx = values[0] * 0.24f * arc
+			val dy = values[1] * 0.055f * arc
+			(inParent.left + (u + dx) * inParent.width) to (inParent.top + (v - dy) * inParent.height)
+		}
+		return Deformer.Warp(id, name, parent, part, 8, 3, true, grid)
+	}
+
+	private fun clothPhysicsWarp(
+		id: DeformerId,
+		name: String,
+		parameter: ParameterId,
+		parameterY: ParameterId?,
+		parent: DeformerId,
+		frame: Bounds,
+		parentFrame: Bounds,
+		part: PartId,
+		rows: Int,
+		swayRatio: Float,
+		curlRatio: Float,
+	): Deformer.Warp {
+		val inParent = mapBounds(frame, parentFrame)
+		val scale = minOf(frame.width, frame.height).coerceAtLeast(1f)
+		val normalizedSway = scale / frame.width.coerceAtLeast(1f) * swayRatio
+		val normalizedCurl = scale / frame.height.coerceAtLeast(1f) * curlRatio
+		val axes = if (parameterY != null) {
+			listOf(axis(parameter, -1f, 0f, 1f), axis(parameterY, -1f, 0f, 1f))
+		} else {
+			listOf(axis(parameter, -1f, 0f, 1f))
+		}
+		val grid = warpGrid(axes, columns = 3, rows = rows) { u, v, values ->
+			val (du, dv) = hairPhysicsPoint(u, v, values[0], normalizedSway, normalizedCurl)
+			val dragY = if (values.size > 1) values[1] * normalizedSway * 0.5f * v * v * v else 0f
+			(inParent.left + du * inParent.width) to (inParent.top + (dv - dragY) * inParent.height)
+		}
+		return Deformer.Warp(id, name, parent, part, rows, 3, true, grid)
+	}
+
 	private fun parentAndFrame(
 		layer: ClassifiedLayer,
 		faceRig: NinePoseFaceRig,
@@ -1277,6 +1650,7 @@ object RigBuilder {
 		faceFrame: Bounds,
 		frontHair: Bounds?,
 		backHair: Bounds?,
+		secondary: SecondaryPhysicsFrames = SecondaryPhysicsFrames(),
 	): Pair<DeformerId, Bounds> = when (layer.semantic.tag) {
 		SemanticTag.FACE -> faceContourId to faceFrame
 		SemanticTag.IRIDES -> faceRig.regionFor(FaceFeature.IRIS, layer.semantic.side)?.let { gazeWarpId(it) to it.bounds }
@@ -1294,6 +1668,19 @@ object RigBuilder {
 			?: (faceWarpId to faceFrame)
 		SemanticTag.FRONT_HAIR -> frontHair?.let { frontHairPhysicsWarpId to it } ?: (headWarpId to head)
 		SemanticTag.BACK_HAIR -> backHair?.let { backHairPhysicsWarpId to it } ?: (headWarpId to head)
+		SemanticTag.SIDE_HAIR -> secondary.sideHair?.let { sideHairPhysicsWarpId to it } ?: (headWarpId to head)
+		SemanticTag.MID_HAIR -> secondary.midHair?.let { midHairPhysicsWarpId to it } ?: (headWarpId to head)
+		SemanticTag.AHOGE -> secondary.ahoge?.let { ahogePhysicsWarpId to it } ?: (headWarpId to head)
+		SemanticTag.BOTTOMWEAR -> secondary.skirt?.let { skirtPhysicsWarpId to it } ?: (breathWarpId to character)
+		SemanticTag.LEGWEAR, SemanticTag.FOOTWEAR -> {
+			val legFrame = secondary.legBySide[layer.semantic.side]
+			if (legFrame != null) {
+				(if (layer.semantic.side == Side.LEFT) legRotContainerLId else legRotContainerRId) to legFrame
+			} else {
+				breathWarpId to character
+			}
+		}
+		SemanticTag.NECKWEAR -> secondary.collar?.let { collarPhysicsWarpId to it } ?: (breathWarpId to character)
 		SemanticTag.TOPWEAR -> bustWarpId to character
 		else -> when {
 			layer.semantic.tag in faceTags -> faceWarpId to faceFrame

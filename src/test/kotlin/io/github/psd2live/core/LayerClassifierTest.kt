@@ -110,10 +110,10 @@ class LayerClassifierTest {
 		assertEquals(SemanticTag.MOUTH_OPEN, LayerClassifier.classify("口開き").tag)
 		assertEquals(SemanticTag.MOUTH_CLOSE, LayerClassifier.classify("口閉じ").tag)
 		assertEquals(SemanticTag.FRONT_HAIR, LayerClassifier.classify("前髪").tag)
-		assertEquals(SemanticTag.FRONT_HAIR, LayerClassifier.classify("横髪").tag)
-		assertEquals(SemanticTag.FRONT_HAIR, LayerClassifier.classify("側髪").tag)
-		assertEquals(SemanticTag.FRONT_HAIR, LayerClassifier.classify("もみあげ").tag)
-		assertEquals(SemanticTag.FRONT_HAIR, LayerClassifier.classify("アホ毛").tag)
+		assertEquals(SemanticTag.SIDE_HAIR, LayerClassifier.classify("横髪").tag)
+		assertEquals(SemanticTag.SIDE_HAIR, LayerClassifier.classify("側髪").tag)
+		assertEquals(SemanticTag.SIDE_HAIR, LayerClassifier.classify("もみあげ").tag)
+		assertEquals(SemanticTag.AHOGE, LayerClassifier.classify("アホ毛").tag)
 		assertEquals(SemanticTag.BACK_HAIR, LayerClassifier.classify("後ろ髪").tag)
 		assertEquals(SemanticTag.BACK_HAIR, LayerClassifier.classify("後髪").tag)
 		assertEquals(SemanticTag.BACK_HAIR, LayerClassifier.classify("ポニーテール").tag)
@@ -133,7 +133,7 @@ class LayerClassifierTest {
 		assertEquals(1, maeGami1.variant)
 
 		val yokoGamiR = LayerClassifier.classify("横髪右")
-		assertEquals(SemanticTag.FRONT_HAIR, yokoGamiR.tag)
+		assertEquals(SemanticTag.SIDE_HAIR, yokoGamiR.tag)
 		assertEquals(Side.RIGHT, yokoGamiR.side)
 
 		val shiromeLeft = LayerClassifier.classify("白目(左)")

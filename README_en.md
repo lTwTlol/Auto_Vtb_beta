@@ -167,7 +167,8 @@ PSD2Live provides model Views, spatial mapping and PNG import. Artwork can use o
 
 | Component | Recommended English | Aliases (ZH / JA) | Behavior |
 | :--- | :--- | :--- | :--- |
-| **Hair** | `front hair`, `back hair` | 前发, 后发, 前髪, 後ろ髪 | Head-follow Warp + $v^3$ tip multi-pendulum physics |
+| **Hair** | `front hair`, `back hair`, `side hair`, `mid hair`, `ahoge` | 前发, 后发, 前髪, 後ろ髪, 侧发, 中发, 呆毛 | Head-follow Warp + $v^3$ tip multi-pendulum physics; side/mid/ahoge layers each get an independent chain (tapered / soft / bouncy) |
+| **Skirt/Legs/Collar** | `bottomwear`, `legwear`, `neckwear` | 裙子, 裤子, 腿, 鞋, 领结, 领饰 | 5-node skirt hem physics, stiff 3-node leg follow, light 5-node collar sway |
 | **Face** | `face`, `facedetail` | 脸, 脸部, 顔, 肌, チーク | Facial baseline and details |
 | **Eyes** | `eyewhite`, `eyelash`, `irides`, `eye_close` | 眼白, 睫毛, 瞳孔, 闭眼, 目, 瞳 | Auto bilateral split, iris clipping, upper-lash smooth U-curve closure |
 | **Brows** | `eyebrow` | 眉, 眉毛, まゆ | Auto bilateral split and projective plane linkage |

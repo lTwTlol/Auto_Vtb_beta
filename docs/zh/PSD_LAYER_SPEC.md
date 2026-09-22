@@ -64,6 +64,9 @@ PSD2Live 内置 31 种核心语义标签，并根据名称自动分类归入三�
 | :--- | :--- | :--- | :--- | :--- |
 | `BACK_HAIR` | `back hair`, `backhair` | 后发, 后髪, 后脑勺 | 後ろ髪 | 挂载于 `DeformHairBackFollow` -> `DeformHairBackPhysics`（自动后发物理摆动） |
 | `FRONT_HAIR` | `front hair`, `fronthair` | 前发, 前髪, 刘海, 瀏海 | 前髪 | 挂载于 `DeformHairFrontFollow` -> `DeformHairFrontPhysics`（自动前发物理摆动） |
+| `SIDE_HAIR` | `side hair`, `sidehair`, `sideburn` | 侧发, 側髪, 鬓角, 鬢角 | 横髪, もみあげ | 独立侧发链 `DeformHairSideFollow` -> `DeformHairSidePhysics`（4 节渐弱摆，`ParamHairSide`） |
+| `MID_HAIR` | `mid hair`, `midhair`, `inner hair` | 中发, 中髪, 内层发 | ミディアム | 独立中发链 `DeformHairMidFollow` -> `DeformHairMidPhysics`（3 节软摆，`ParamHairMid`） |
+| `AHOGE` | `ahoge`, `cowlick` | 呆毛, 翘毛 | アホ毛 | 独立呆毛链 `DeformAhogeFollow` -> `DeformAhogePhysics`（弹性回弹摆，`ParamAhoge`） |
 | `HEADWEAR` | `headwear`, `hat` | 帽子, 头饰, 頭飾, 发饰 | 髪飾り | 挂载于头部容器 |
 | `FACE` | `face`, `head` | 脸, 臉, 脸部, 面部 | 顔, 肌 | 头部与面部基底，提供面部中心定位参考 |
 | `FACE_DETAIL`| `facedetail`, `blush` | 脸部细节, 腮红, 紅暈 | チーク | 腮红、泪痣、面纹等面部细节 |
@@ -87,11 +90,11 @@ PSD2Live 内置 31 种核心语义标签，并根据名称自动分类归入三�
 | 语义标签 (Tag) | 推荐英文名 | 常用中文别名 | 说明与绑定行为 |
 | :--- | :--- | :--- | :--- |
 | `NECK` | `neck` | 脖子, 颈部, 頸部, 首 | 脖子基底，承接头部旋转与身体倾斜 |
-| `NECKWEAR` | `neckwear`, `collar`, `scarf` | 领饰, 領飾, 围巾, 项链 | 领口、项圈等配饰 |
+| `NECKWEAR` | `neckwear`, `collar`, `scarf` | 领饰, 領飾, 围巾, 项链 | 领口、项圈等配饰；自动领结物理 `DeformCollarPhysics`（5 节轻质摆，`ParamCollarSwing`） |
 | `TOPWEAR` | `topwear`, `clothes`, `shirt` | 上衣, 衣服, 服装, 服 | 绑定身体 XYZ 与胸腔呼吸膨胀 |
 | `HANDWEAR` | `handwear`, `hand`, `arm` | 手, 手臂, 腕, 手套 | 躯干及手臂部件 |
-| `BOTTOMWEAR` | `bottomwear`, `pants`, `skirt` | 下装, 裤子, 裙子 | 下半身躯干 |
-| `LEGWEAR` | `legwear`, `leg`, `legs` | 腿, 大腿 | 腿部画元 |
+| `BOTTOMWEAR` | `bottomwear`, `pants`, `skirt` | 下装, 裤子, 裙子 | 下半身躯干；自动裙摆物理 `DeformSkirtPhysics`（5 节体感摆，`ParamSkirtSwing`，腰部固定下摆自由） |
+| `LEGWEAR` | `legwear`, `leg`, `legs` | 腿, 大腿 | 腿部画元；自动腿部摆动 `DeformLegPhysics`（3 节硬质跟随，`ParamLegSwing`） |
 | `FOOTWEAR` | `footwear`, `shoe`, `shoes` | 脚, 鞋, 鞋子 | 足部画元 |
 
 ### 3. 附加与特效组件 (Extra Group)

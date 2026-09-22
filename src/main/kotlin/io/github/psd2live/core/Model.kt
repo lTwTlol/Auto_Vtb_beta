@@ -9,6 +9,9 @@ import java.nio.file.Path
 enum class SemanticTag(val canonicalName: String, val group: LayerGroup) {
 	BACK_HAIR("back hair", LayerGroup.HEAD),
 	FRONT_HAIR("front hair", LayerGroup.HEAD),
+	SIDE_HAIR("side hair", LayerGroup.HEAD),
+	MID_HAIR("mid hair", LayerGroup.HEAD),
+	AHOGE("ahoge", LayerGroup.HEAD),
 	HEADWEAR("headwear", LayerGroup.HEAD),
 	FACE("face", LayerGroup.HEAD),
 	FACE_DETAIL("facedetail", LayerGroup.HEAD),

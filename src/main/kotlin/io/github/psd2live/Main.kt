@@ -82,6 +82,15 @@ fun main(arguments: Array<String>) {
 		return
 	}
 	val options = CliOptions.parse(arguments)
+	if (options.flags.contains("--moc3-to-cmo3")) {
+		val input = Path.of(options.required("--input"))
+		val output = Path.of(options.value("--output") ?: input.toAbsolutePath().parent.resolve("moc3-to-cmo3-output").toString())
+		val result = io.github.psd2live.core.Moc3ToCmo3.convert(input, output)
+		result.files.forEach { println("  ${it.path.absolutePathString()} (${it.bytes} bytes)") }
+		result.validation.forEach { println("[validate] $it") }
+		result.notices.forEach { System.err.println("[notice] $it") }
+		return
+	}
 	val config = PipelineConfig(
 		atlasSize = options.int("--atlas", 4096),
         textureUpscale = io.github.psd2live.core.TextureUpscaleConfig(
@@ -147,7 +156,7 @@ private data class CliOptions(val values: Map<String, String>, val flags: Set<St
 	fun float(name: String, default: Float): Float = value(name)?.toFloatOrNull() ?: default
 
 	companion object {
-		private val flagNames = setOf("--no-upscale-neural-alpha", "--upscale-neural-alpha", "--no-physics", "--no-cmo3", "--no-moc3", "--mesh-only", "--no-deformers", "--no-motions", "--no-expressions", "--no-json")
+		private val flagNames = setOf("--no-upscale-neural-alpha", "--upscale-neural-alpha", "--no-physics", "--no-cmo3", "--no-moc3", "--mesh-only", "--no-deformers", "--no-motions", "--no-expressions", "--no-json", "--moc3-to-cmo3")
 		private val valueNames = setOf("--upscale", "--upscale-noise", "--upscale-python", "--nunif-dir", "--upscale-model", "--upscale-tile", "--input", "--output", "--lang", "--atlas", "--mesh-spacing", "--head-strength", "--body-strength")
 		fun parse(arguments: Array<String>): CliOptions {
 			val values = linkedMapOf<String, String>()

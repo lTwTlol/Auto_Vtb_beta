@@ -52,7 +52,7 @@ object ComponentSplitter {
 		if (width <= 1 || height <= 1 || layer.opaquePixels <= 0) return listOf(layer)
 
 		val semanticDensity = when (layer.semantic.tag) {
-			SemanticTag.FACE, SemanticTag.FRONT_HAIR, SemanticTag.BACK_HAIR, SemanticTag.TOPWEAR -> 0.65f
+			SemanticTag.FACE, SemanticTag.FRONT_HAIR, SemanticTag.BACK_HAIR, SemanticTag.SIDE_HAIR, SemanticTag.MID_HAIR, SemanticTag.AHOGE, SemanticTag.TOPWEAR -> 0.65f
 			SemanticTag.IRIDES, SemanticTag.EYELASH, SemanticTag.EYEWHITE, SemanticTag.EYEBROW,
 			SemanticTag.MOUTH, SemanticTag.MOUTH_OPEN, SemanticTag.MOUTH_CLOSE,
 			SemanticTag.TOOTH_T, SemanticTag.TOOTH_B, SemanticTag.TONGUE -> 0.45f

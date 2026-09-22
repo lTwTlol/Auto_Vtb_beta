@@ -9,7 +9,10 @@ object LayerClassifier {
 	private val aliases: Map<String, SemanticTag> = buildMap {
 		fun names(tag: SemanticTag, vararg values: String) = values.forEach { put(it, tag) }
 		names(SemanticTag.BACK_HAIR, "back hair", "backhair", "hair back", "hair_back", "后发", "后髪", "后脑勺", "後ろ髪", "後髪", "うしろがみ", "后头", "後頭部", "马尾", "馬尾", "ポニーテール", "ポニテ", "双马尾", "雙馬尾", "ツインテール", "ツインテ", "背发", "背髪")
-		names(SemanticTag.FRONT_HAIR, "front hair", "fronthair", "hair front", "hair_front", "hair", "bangs", "前发", "前髪", "刘海", "瀏海", "まえがみ", "侧发", "側髪", "横髪", "鬓角", "もみあげ", "サイドヘア", "サイド", "呆毛", "アホ毛", "ahoge")
+		names(SemanticTag.FRONT_HAIR, "front hair", "fronthair", "hair front", "hair_front", "hair", "bangs", "前发", "前髪", "刘海", "瀏海", "まえがみ")
+		names(SemanticTag.SIDE_HAIR, "side hair", "sidehair", "hair side", "hair_side", "侧发", "側髪", "横髪", "鬓角", "鬢角", "もみあげ", "サイドヘア", "サイド", "sideburn", "sideburns")
+		names(SemanticTag.MID_HAIR, "mid hair", "midhair", "middle hair", "middlehair", "inner hair", "innerhair", "中发", "中髪", "内层发", "內層髪", "内发", "ミディアム", "ミディアムヘア")
+		names(SemanticTag.AHOGE, "ahoge", "ahoge hair", "cowlick", "呆毛", "アホ毛", "アホ毛一本", "呆毛一根", "翘毛", "翹毛")
 		names(SemanticTag.HEADWEAR, "headwear", "hat", "cap", "帽子", "头饰", "頭飾", "发饰", "髪飾り", "カチューシャ", "リボン", "发带", "蝴蝶结")
 		names(SemanticTag.FACE, "face", "head", "脸", "臉", "脸部", "面部", "顔", "かお", "輪郭", "脸轮廓", "脸部轮廓", "脸蛋", "头部", "头", "頭", "あたま")
 		names(SemanticTag.FACE_DETAIL, "facedetail", "face detail", "face_detail", "脸部细节", "面部细节", "腮红", "紅暈", "红晕", "ほほ", "頬", "チーク", "blush", "脸颊", "泪痕")
